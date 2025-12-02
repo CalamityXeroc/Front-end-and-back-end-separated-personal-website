@@ -21,7 +21,6 @@
 - **状态管理：** Vuex 4
 - **HTTP 请求：** Axios
 - **Markdown 渲染：** markdown-it
-- **UI 交互组件：** [Widgets.link](https://www.widgets.link/)
 
 ### 后端
 - **运行时：** Node.js 16+
@@ -105,17 +104,17 @@ my-personal-website/
 - 博客搜索和筛选
 
 ### 🗺️ WebGIS 展示
-- 互动地图展示
-- 项目作品展示
-- 地理信息可视化
+- 目前并未开放
+
+
 
 ### 👤 个人信息
-- 个人简介和技能展示
+- 个人简介
 - 项目经历
 - 联系方式
 - 集成第三方小组件：
-  - **B站粉丝组件**：实时显示 B 站粉丝数（来自 [Widgets.link](https://www.widgets.link/)）
-  - **时钟日期组件**：首页动态时钟显示（来自 [Widgets.link](https://www.widgets.link/)）
+  - **B站粉丝组件**：实时显示 B 站粉丝数
+  - **时钟日期组件**：首页动态时钟显示（都来自 [Widgets.link](https://www.widgets.link/)）
 
 ### 📱 响应式设计
 - 完美适配桌面端和移动端
@@ -201,34 +200,7 @@ pm2 start src/server.js --name my-backend
 pm2 save
 ```
 
-## 🔧 环境变量配置
-
-### 后端 `.env` 文件示例
-
-```env
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=5433
-DB_USER=your_username
-DB_PASSWORD=your_password
-DB_NAME=your_database
-
-# 服务器配置
-PORT=5000
-NODE_ENV=production
-
-# 文件上传路径
-UPLOAD_PATH=./uploads
-```
-
 ## 📝 开发笔记
-
-### 关于第三方组件
-本项目集成了来自 [Widgets.link](https://www.widgets.link/) 的在线小组件：
-- **B站粉丝数组件**：位于"关于我"页面，实时显示个人 B 站账号粉丝数
-- **时钟日期组件**：位于首页，显示当前日期和星期
-
-这些组件通过 iframe 嵌入，无需额外配置，支持响应式布局。
 
 ### API 路径配置
 - 开发环境：Vite 代理 `/api` → `http://localhost:5000`
@@ -246,13 +218,6 @@ UPLOAD_PATH=./uploads
 - B站：[@佰世铜](https://space.bilibili.com/325685845)
 - 邮箱：2749955791@qq.com
 
-## 🙏 致谢
-
-- Vue.js 团队提供的优秀前端框架
-- Vite 团队的快速构建工具
-- [Widgets.link](https://www.widgets.link/) 提供的精美小组件
-- 所有开源贡献者
-
 ## 📮 反馈与建议
 
 如果你在使用过程中遇到问题或有任何建议，欢迎：
@@ -263,23 +228,3 @@ UPLOAD_PATH=./uploads
 ---
 
 ⭐ 如果这个项目对你有帮助，欢迎给个 Star！
-
-To get started with this project, clone the repository and install the dependencies:
-
-```bash
-git clone <repository-url>
-cd my-personal-website
-npm install
-```
-
-Then, you can run the development server:
-
-```bash
-npm run dev
-```
-
-Visit `http://localhost:3000` in your browser to see the website in action.
-
-## License
-
-This project is open-source and available under the MIT License.
