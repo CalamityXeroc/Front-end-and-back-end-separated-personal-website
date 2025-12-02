@@ -1,0 +1,57 @@
+# 依赖文件
+node_modules/
+*/node_modules/
+
+# 构建输出
+dist/
+dist.zip
+
+# 环境变量和配置
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 编辑器配置
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 上传文件（包含用户上传的内容）
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# 数据库备份文件
+*.sql
+backend/*.sql
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 操作系统文件
+Thumbs.db
+Desktop.ini
+
+# 部署脚本（包含服务器敏感信息）
+deploy-fixed.ps1
+start_backend.bat
+start_website.bat
+DEPLOY_README.md
+
+# PM2 配置
+.pm2/

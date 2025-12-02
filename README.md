@@ -1,0 +1,285 @@
+# 佰世铜的个人网站 🌐
+
+> 一个基于 Vue 3 + Node.js 的全栈个人网站，展示博客、地图项目和个人信息
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Vue 3](https://img.shields.io/badge/Vue-3.2+-brightgreen.svg)](https://vuejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-16+-green.svg)](https://nodejs.org/)
+
+## ✨ 项目简介
+
+这是一个现代化的全栈个人网站项目，采用前后端分离架构。网站包含博客系统、WebGIS 项目展示、互动地图等功能，并完全适配移动端浏览。
+
+**在线访问：** [www.bst-note.top](http://www.bst-note.top)
+
+## 🚀 技术栈
+
+### 前端
+- **框架：** Vue 3 (Composition API)
+- **构建工具：** Vite 2.9
+- **路由：** Vue Router 4
+- **状态管理：** Vuex 4
+- **HTTP 请求：** Axios
+- **Markdown 渲染：** markdown-it
+- **UI 交互组件：** [Widgets.link](https://www.widgets.link/)
+
+### 后端
+- **运行时：** Node.js 16+
+- **框架：** Express
+- **数据库：** PostgreSQL
+- **ORM：** Sequelize
+- **文件上传：** Multer
+
+### 部署
+- **前端部署：** Nginx 静态资源服务
+- **后端部署：** PM2 进程管理
+- **服务器：** 腾讯云 Ubuntu
+- **面板：** 宝塔面板
+- **SSL：** 腾讯云 SSL 证书
+
+## 📦 项目结构
+
+```
+my-personal-website/
+├── frontend/                    # 前端项目
+│   ├── public/
+│   │   ├── picture/            # 图片资源
+│   │   └── videos/             # 视频资源
+│   ├── src/
+│   │   ├── api/                # API 接口封装
+│   │   ├── assets/             # 静态资源
+│   │   ├── components/         # 公共组件
+│   │   │   ├── BlogCard.vue   # 博客卡片
+│   │   │   ├── CommentSection.vue  # 评论组件
+│   │   │   └── Header.vue     # 导航头部
+│   │   ├── composables/        # 组合式函数
+│   │   ├── router/             # 路由配置
+│   │   ├── store/              # 状态管理
+│   │   ├── utils/              # 工具函数
+│   │   ├── views/              # 页面组件
+│   │   │   ├── Home.vue       # 首页
+│   │   │   ├── Blog.vue       # 博客列表
+│   │   │   ├── BlogPost.vue   # 博客详情
+│   │   │   ├── BlogEditor.vue # 博客编辑器
+│   │   │   ├── Maps.vue       # 地图展示
+│   │   │   ├── About.vue      # 关于我
+│   │   │   ├── Admin.vue      # 后台管理
+│   │   │   └── Login.vue      # 登录页
+│   │   ├── App.vue            # 根组件
+│   │   └── main.js            # 入口文件
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+│
+└── backend/                     # 后端项目
+    ├── src/
+    │   ├── config/             # 配置文件
+    │   │   ├── database.js    # 数据库配置
+    │   │   ├── initDatabase.js # 数据库初始化
+    │   │   └── upload.js      # 文件上传配置
+    │   ├── controllers/        # 控制器
+    │   │   ├── blogController.js
+    │   │   └── commentController.js
+    │   ├── models/             # 数据模型
+    │   │   ├── Blog.js
+    │   │   ├── Comment.js
+    │   │   └── MapMarker.js
+    │   ├── routes/             # 路由
+    │   │   ├── blogRoutes.js
+    │   │   ├── commentRoutes.js
+    │   │   └── uploadRoutes.js
+    │   └── server.js           # 服务入口
+    ├── uploads/                # 上传文件目录
+    ├── .env.example           # 环境变量模板
+    ├── package.json
+    └── README.md
+```
+
+## 🎯 功能特性
+
+### 📝 博客系统
+- 支持 Markdown 编写和渲染
+- 代码高亮显示
+- 标签分类管理
+- 评论互动功能
+- 博客搜索和筛选
+
+### 🗺️ WebGIS 展示
+- 互动地图展示
+- 项目作品展示
+- 地理信息可视化
+
+### 👤 个人信息
+- 个人简介和技能展示
+- 项目经历
+- 联系方式
+- 集成第三方小组件：
+  - **B站粉丝组件**：实时显示 B 站粉丝数（来自 [Widgets.link](https://www.widgets.link/)）
+  - **时钟日期组件**：首页动态时钟显示（来自 [Widgets.link](https://www.widgets.link/)）
+
+### 📱 响应式设计
+- 完美适配桌面端和移动端
+- 优化的移动端交互体验
+- 自适应布局设计
+
+## 🛠️ 本地开发
+
+### 环境要求
+- Node.js >= 16.0.0
+- npm >= 7.0.0
+- PostgreSQL >= 14.0
+
+### 前端开发
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 预览生产构建
+npm run serve
+```
+
+### 后端开发
+
+```bash
+# 进入后端目录
+cd backend
+
+# 安装依赖
+npm install
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入数据库配置
+
+# 初始化数据库
+node src/config/initDatabase.js
+
+# 启动开发服务器
+npm start
+```
+
+## 🌐 部署指南
+
+### 前端部署
+
+1. 构建生产版本：
+```bash
+npm run build
+```
+
+2. 将 `dist` 文件夹内容上传到服务器 Nginx 根目录
+
+3. 配置 Nginx 反向代理：
+```nginx
+location /api/ {
+    proxy_pass http://127.0.0.1:5000/api/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+### 后端部署
+
+1. 安装依赖并配置环境：
+```bash
+cd backend
+npm install --production
+```
+
+2. 配置 `.env` 文件（数据库、端口等）
+
+3. 使用 PM2 启动：
+```bash
+pm2 start src/server.js --name my-backend
+pm2 save
+```
+
+## 🔧 环境变量配置
+
+### 后端 `.env` 文件示例
+
+```env
+# 数据库配置
+DB_HOST=localhost
+DB_PORT=5433
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=your_database
+
+# 服务器配置
+PORT=5000
+NODE_ENV=production
+
+# 文件上传路径
+UPLOAD_PATH=./uploads
+```
+
+## 📝 开发笔记
+
+### 关于第三方组件
+本项目集成了来自 [Widgets.link](https://www.widgets.link/) 的在线小组件：
+- **B站粉丝数组件**：位于"关于我"页面，实时显示个人 B 站账号粉丝数
+- **时钟日期组件**：位于首页，显示当前日期和星期
+
+这些组件通过 iframe 嵌入，无需额外配置，支持响应式布局。
+
+### API 路径配置
+- 开发环境：Vite 代理 `/api` → `http://localhost:5000`
+- 生产环境：Nginx 反向代理 `/api` → 后端服务
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+## 👨‍💻 作者
+
+**佰世铜**
+- 网站：[www.bst-note.top](http://www.bst-note.top)
+- GitHub：[@CalamityXeroc](https://github.com/CalamityXeroc)
+- B站：[@佰世铜](https://space.bilibili.com/325685845)
+- 邮箱：2749955791@qq.com
+
+## 🙏 致谢
+
+- Vue.js 团队提供的优秀前端框架
+- Vite 团队的快速构建工具
+- [Widgets.link](https://www.widgets.link/) 提供的精美小组件
+- 所有开源贡献者
+
+## 📮 反馈与建议
+
+如果你在使用过程中遇到问题或有任何建议，欢迎：
+- 提交 [Issue](https://github.com/CalamityXeroc/my-personal-website/issues)
+- 发送邮件至：2749955791@qq.com
+- 加入 QQ 群：467629377
+
+---
+
+⭐ 如果这个项目对你有帮助，欢迎给个 Star！
+
+To get started with this project, clone the repository and install the dependencies:
+
+```bash
+git clone <repository-url>
+cd my-personal-website
+npm install
+```
+
+Then, you can run the development server:
+
+```bash
+npm run dev
+```
+
+Visit `http://localhost:3000` in your browser to see the website in action.
+
+## License
+
+This project is open-source and available under the MIT License.
