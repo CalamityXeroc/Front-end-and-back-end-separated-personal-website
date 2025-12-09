@@ -129,8 +129,11 @@ export default {
 <style scoped>
 .home {
   padding: 0;
+  margin: 0;
   overflow-x: hidden;
   background: transparent;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .hero-section {

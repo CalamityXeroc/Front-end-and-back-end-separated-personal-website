@@ -108,7 +108,10 @@ export default {
 .about-wrapper {
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .bg-video {
