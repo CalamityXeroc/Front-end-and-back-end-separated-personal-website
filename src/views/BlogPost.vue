@@ -189,15 +189,17 @@ h1 {
 }
 
 .content :deep(code) {
-  background: #f4f4f4;
+  background: #EBF4ED;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
+  color: #2d5016;
 }
 
 .content :deep(pre) {
-  background: #f4f4f4;
+  background: #2d2d2d;
+  color: #f8f8f2;
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
@@ -259,7 +261,7 @@ h1 {
 }
 
 .content :deep(table th) {
-  background: #f4f4f4;
+  background: #d4f4d4;
   font-weight: 600;
 }
 

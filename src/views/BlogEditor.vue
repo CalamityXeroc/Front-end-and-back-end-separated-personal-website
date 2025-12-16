@@ -283,6 +283,32 @@ export default {
       }, 0);
     };
 
+    // 插入代码函数
+    const insertCode = () => {
+      const textarea = contentTextarea.value;
+      if (!textarea) return;
+      
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = form.value.content.substring(start, end);
+      
+      if (selectedText) {
+        // 有选中文本，直接用反引号包裹
+        insertMarkdown('`', '`');
+      } else {
+        // 没有选中文本，提示用户输入
+        const code = prompt('请输入代码内容：');
+        if (code) {
+          const newText = form.value.content.substring(0, start) + '`' + code + '`' + form.value.content.substring(end);
+          form.value.content = newText;
+          setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + code.length + 2, start + code.length + 2);
+          }, 0);
+        }
+      }
+    };
+
     const insertLink = () => {
       const url = prompt('请输入链接地址：', 'https://');
       if (url) {
@@ -854,12 +880,12 @@ export default {
 }
 
 .preview-content code {
-  background: #f4f4f4;
+  background: #90EE90;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.9em;
-  color: #e83e8c;
+  color: #2d5016;
 }
 
 .preview-content pre {
