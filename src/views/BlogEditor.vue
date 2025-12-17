@@ -290,20 +290,65 @@ export default {
       
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const selectedText = form.value.content.substring(start, end);
+      let selectedText = form.value.content.substring(start, end);
+      
+      // 移除公共缩进（解决缩进导致的显示问题）
+      const removeCommonIndent = (text) => {
+        const lines = text.split('\n');
+        if (lines.length <= 1) return text;
+        
+        // 找到最小缩进（忽略空行）
+        let minIndent = Infinity;
+        for (const line of lines) {
+          if (line.trim().length > 0) {
+            const indent = line.match(/^\s*/)[0].length;
+            minIndent = Math.min(minIndent, indent);
+          }
+        }
+        
+        // 移除公共缩进
+        if (minIndent > 0 && minIndent !== Infinity) {
+          return lines.map(line => line.substring(minIndent)).join('\n');
+        }
+        return text;
+      };
       
       if (selectedText) {
-        // 有选中文本，直接用反引号包裹
-        insertMarkdown('`', '`');
+        // 有选中文本，判断是否包含换行
+        if (selectedText.includes('\n')) {
+          // 移除公共缩进
+          selectedText = removeCommonIndent(selectedText);
+          // 多行代码块格式：```换行代码换行```
+          const newText = form.value.content.substring(0, start) + '```\n' + selectedText + '\n```' + form.value.content.substring(end);
+          form.value.content = newText;
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = start + selectedText.length + 8; // ``` + \n + 代码 + \n + ```
+            textarea.setSelectionRange(newPos, newPos);
+          }, 0);
+        } else {
+          // 单行文本使用行内代码
+          insertMarkdown('`', '`');
+        }
       } else {
         // 没有选中文本，提示用户输入
         const code = prompt('请输入代码内容：');
         if (code) {
-          const newText = form.value.content.substring(0, start) + '`' + code + '`' + form.value.content.substring(end);
+          let insertText = '';
+          if (code.includes('\n')) {
+            // 输入内容包含换行，使用代码块
+            const cleanCode = removeCommonIndent(code);
+            insertText = '```\n' + cleanCode + '\n```';
+          } else {
+            // 输入内容不包含换行，使用行内代码
+            insertText = '`' + code + '`';
+          }
+          
+          const newText = form.value.content.substring(0, start) + insertText + form.value.content.substring(end);
           form.value.content = newText;
           setTimeout(() => {
             textarea.focus();
-            textarea.setSelectionRange(start + code.length + 2, start + code.length + 2);
+            textarea.setSelectionRange(start + insertText.length, start + insertText.length);
           }, 0);
         }
       }
@@ -382,8 +427,42 @@ export default {
       }
     };
 
+    const addCopyButtons = () => {
+      const preElements = document.querySelectorAll('.preview-content pre');
+      preElements.forEach(pre => {
+        // 避免重复添加按钮
+        if (pre.querySelector('.copy-btn')) return;
+        
+        // 创建复制按钮
+        const button = document.createElement('button');
+        button.className = 'copy-btn';
+        button.textContent = '复制';
+        button.onclick = () => {
+          const code = pre.querySelector('code')?.textContent || pre.textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制！';
+            setTimeout(() => {
+              button.textContent = '复制';
+            }, 2000);
+          });
+        };
+        
+        // 将 pre 设置为相对定位
+        pre.style.position = 'relative';
+        pre.appendChild(button);
+      });
+    };
+
     onMounted(() => {
       fetchBlog();
+      // 监听内容变化，自动添加复制按钮
+      const observer = new MutationObserver(() => {
+        addCopyButtons();
+      });
+      const previewContent = document.querySelector('.preview-content');
+      if (previewContent) {
+        observer.observe(previewContent, { childList: true, subtree: true });
+      }
     });
 
     return {
@@ -879,7 +958,7 @@ export default {
   border-radius: 0 8px 8px 0;
 }
 
-.preview-content code {
+.preview-content :deep(code) {
   background: #90EE90;
   padding: 2px 6px;
   border-radius: 4px;
@@ -888,19 +967,41 @@ export default {
   color: #2d5016;
 }
 
-.preview-content pre {
-  background: #2d2d2d;
-  color: #f8f8f2;
+.preview-content :deep(pre) {
+  background: #90EE90 !important;
+  color: #2d5016;
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
   margin: 16px 0;
+  position: relative;
 }
 
-.preview-content pre code {
+.preview-content :deep(pre code) {
   background: none;
   color: inherit;
   padding: 0;
+}
+
+.preview-content :deep(.copy-btn) {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2d5016;
+  border: 1px solid #2d5016;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.preview-content :deep(.copy-btn:hover) {
+  background: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .preview-content img {

@@ -90,8 +90,36 @@ export default {
       });
     };
 
-    onMounted(() => {
-      fetchPost();
+    const addCopyButtons = () => {
+      const preElements = document.querySelectorAll('.content pre');
+      preElements.forEach(pre => {
+        // 避免重复添加按钮
+        if (pre.querySelector('.copy-btn')) return;
+        
+        // 创建复制按钮
+        const button = document.createElement('button');
+        button.className = 'copy-btn';
+        button.textContent = '复制';
+        button.onclick = () => {
+          const code = pre.querySelector('code')?.textContent || pre.textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = '已复制！';
+            setTimeout(() => {
+              button.textContent = '复制';
+            }, 2000);
+          });
+        };
+        
+        // 将 pre 设置为相对定位
+        pre.style.position = 'relative';
+        pre.appendChild(button);
+      });
+    };
+
+    onMounted(async () => {
+      await fetchPost();
+      // 等待 DOM 更新后添加复制按钮
+      setTimeout(addCopyButtons, 100);
     });
 
     return {
@@ -189,7 +217,7 @@ h1 {
 }
 
 .content :deep(code) {
-  background: #EBF4ED;
+  background: #cef2ce;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Consolas', 'Monaco', monospace;
@@ -198,17 +226,39 @@ h1 {
 }
 
 .content :deep(pre) {
-  background: #2d2d2d;
-  color: #f8f8f2;
+  background: #cef2ce !important;
+  color: #2d5016;
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
   margin: 1.5em 0;
+  position: relative;
 }
 
 .content :deep(pre code) {
   background: none;
   padding: 0;
+}
+
+.content :deep(.copy-btn) {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2d5016;
+  border: 1px solid #2d5016;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.content :deep(.copy-btn:hover) {
+  background: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .content :deep(img) {
@@ -221,7 +271,7 @@ h1 {
 }
 
 .content :deep(a) {
-  color: #42b983;
+  color: #cef2ce;
   text-decoration: none;
 }
 
@@ -230,7 +280,7 @@ h1 {
 }
 
 .content :deep(blockquote) {
-  border-left: 4px solid #42b983;
+  border-left: 4px solid #cef2ce;
   padding-left: 16px;
   margin: 1.5em 0;
   color: #7f8c8d;
@@ -261,7 +311,7 @@ h1 {
 }
 
 .content :deep(table th) {
-  background: #d4f4d4;
+  background: #f4f4f4;
   font-weight: 600;
 }
 
