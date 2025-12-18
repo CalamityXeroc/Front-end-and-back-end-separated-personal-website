@@ -99,21 +99,82 @@ export default {
         // 创建复制按钮
         const button = document.createElement('button');
         button.className = 'copy-btn';
-        button.textContent = '复制';
-        button.onclick = () => {
-          const code = pre.querySelector('code')?.textContent || pre.textContent;
-          navigator.clipboard.writeText(code).then(() => {
-            button.textContent = '已复制！';
-            setTimeout(() => {
-              button.textContent = '复制';
-            }, 2000);
-          });
-        };
+        button.innerHTML = '📋 复制';
+        button.title = '复制代码';
         
         // 将 pre 设置为相对定位
         pre.style.position = 'relative';
         pre.appendChild(button);
+        
+        // 添加点击事件
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          const codeElement = pre.querySelector('code') || pre;
+          const codeToCopy = codeElement.textContent || '';
+          
+          // 优先使用现代、安全的Clipboard API
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(codeToCopy).then(() => {
+              button.innerHTML = '✅ 已复制!';
+              button.classList.add('copied');
+              setTimeout(() => {
+                button.innerHTML = '📋 复制';
+                button.classList.remove('copied');
+              }, 2000);
+            }).catch((err) => {
+              console.error('无法复制代码:', err);
+              button.textContent = '复制失败';
+              setTimeout(() => {
+                button.innerHTML = '📋 复制';
+              }, 2000);
+            });
+          } else {
+            // 备用方法
+            fallbackCopyText(codeToCopy, button);
+          }
+        });
       });
+    };
+    
+    const fallbackCopyText = (text, button) => {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.opacity = '0';
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          button.innerHTML = '✅ 已复制!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.innerHTML = '📋 复制';
+            button.classList.remove('copied');
+          }, 2000);
+        } else {
+          button.textContent = '复制失败';
+          setTimeout(() => {
+            button.innerHTML = '📋 复制';
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('备用复制失败:', err);
+        button.textContent = '复制失败';
+        setTimeout(() => {
+          button.innerHTML = '📋 复制';
+        }, 2000);
+      }
+      
+      document.body.removeChild(textArea);
     };
 
     onMounted(async () => {

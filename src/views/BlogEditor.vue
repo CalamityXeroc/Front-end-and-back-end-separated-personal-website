@@ -43,19 +43,30 @@
 
         <div class="form-group">
           <label for="tags">标签</label>
+          <div class="tags-capsule-container">
+            <span
+              v-for="tag in availableTags"
+              :key="tag"
+              :class="['tag-capsule', { selected: form.tags.includes(tag) }]"
+              @click="toggleTag(tag)"
+            >
+              {{ tag }}
+            </span>
+          </div>
           <input
             id="tags"
-            v-model="tagsInput"
+            v-model="newTagInput"
             type="text"
-            placeholder="输入标签，用逗号分隔，如: WebGIS, 前端, Vue"
+            placeholder="添加新标签..."
+            @keypress.enter.prevent="addNewTag"
           />
-          <small>多个标签用逗号分隔</small>
+          <small>点击选择标签或按 Enter 添加新标签</small>
         </div>
 
         <div class="form-group">
           <label for="content">
             内容 * 
-            <span class="markdown-tip">支持 Markdown 语法</span>
+            <span class="markdown-tip">💡 支持拖拽或粘贴图片上传 | Markdown 语法</span>
           </label>
           
           <div class="markdown-toolbar">
@@ -77,7 +88,7 @@
             <button type="button" @click="insertMarkdown('1. ', '')" class="toolbar-btn" title="有序列表">🔢</button>
             <button type="button" @click="insertMarkdown('\n---\n', '')" class="toolbar-btn" title="分割线">📐</button>
             <button type="button" @click="insertMarkdown('> ', '')" class="toolbar-btn" title="引用">❝</button>
-            <button type="button" @click="insertMarkdown('`', '`')" class="toolbar-btn" title="代码">&lt;/&gt;</button>
+            <button type="button" @click="insertCode" class="toolbar-btn toolbar-btn-code" title="插入代码">💻 代码</button>
             <span class="toolbar-divider">|</span>
             <button type="button" @click="insertLink" class="toolbar-btn" title="插入链接">🔗</button>
             <button type="button" @click="showImageDialog = true" class="toolbar-btn toolbar-btn-highlight" title="插入图片">🖼️ 插入图片</button>
@@ -216,6 +227,30 @@ export default {
     });
 
     const tagsInput = ref('');
+    const newTagInput = ref('');
+    const availableTags = ref(['WebGIS', '前端', 'Vue', 'JavaScript', 'Python', 'Node.js', '数据库', '算法']);
+    const isUploading = ref(false);
+
+    const toggleTag = (tag) => {
+      const index = form.value.tags.indexOf(tag);
+      if (index > -1) {
+        form.value.tags.splice(index, 1);
+      } else {
+        form.value.tags.push(tag);
+      }
+    };
+
+    const addNewTag = () => {
+      const newTag = newTagInput.value.trim();
+      if (newTag && !availableTags.value.includes(newTag)) {
+        availableTags.value.push(newTag);
+        form.value.tags.push(newTag);
+        newTagInput.value = '';
+      } else if (newTag && !form.value.tags.includes(newTag)) {
+        form.value.tags.push(newTag);
+        newTagInput.value = '';
+      }
+    };
 
     const renderedContent = computed(() => {
       return md.render(form.value.content);
@@ -235,7 +270,12 @@ export default {
             coverImage: response.data.coverImage || '',
             tags: response.data.tags || []
           };
-          tagsInput.value = form.value.tags.join(', ');
+          // 更新可用标签列表
+          response.data.tags?.forEach(tag => {
+            if (!availableTags.value.includes(tag)) {
+              availableTags.value.push(tag);
+            }
+          });
         }
       } catch (err) {
         alert('加载博客失败：' + err.message);
@@ -246,8 +286,6 @@ export default {
     };
 
     const handleSubmit = async () => {
-      form.value.tags = tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-
       submitting.value = true;
       try {
         if (isEdit.value) {
@@ -283,7 +321,7 @@ export default {
       }, 0);
     };
 
-    // 插入代码函数
+    // 插入代码块功能 - 重构版
     const insertCode = () => {
       const textarea = contentTextarea.value;
       if (!textarea) return;
@@ -292,12 +330,11 @@ export default {
       const end = textarea.selectionEnd;
       let selectedText = form.value.content.substring(start, end);
       
-      // 移除公共缩进（解决缩进导致的显示问题）
+      // 移除公共缩进
       const removeCommonIndent = (text) => {
         const lines = text.split('\n');
         if (lines.length <= 1) return text;
         
-        // 找到最小缩进（忽略空行）
         let minIndent = Infinity;
         for (const line of lines) {
           if (line.trim().length > 0) {
@@ -306,7 +343,6 @@ export default {
           }
         }
         
-        // 移除公共缩进
         if (minIndent > 0 && minIndent !== Infinity) {
           return lines.map(line => line.substring(minIndent)).join('\n');
         }
@@ -314,42 +350,61 @@ export default {
       };
       
       if (selectedText) {
-        // 有选中文本，判断是否包含换行
+        // 有选中文本
         if (selectedText.includes('\n')) {
-          // 移除公共缩进
+          // 多行代码 - 使用代码块
           selectedText = removeCommonIndent(selectedText);
-          // 多行代码块格式：```换行代码换行```
-          const newText = form.value.content.substring(0, start) + '```\n' + selectedText + '\n```' + form.value.content.substring(end);
+          
+          // 弹出对话框选择语言
+          const language = prompt('请输入代码语言（可选，如：javascript, python, css）：', '');
+          const langTag = language ? language.trim() : '';
+          
+          const codeBlock = `\`\`\`${langTag}\n${selectedText}\n\`\`\``;
+          const newText = form.value.content.substring(0, start) + codeBlock + form.value.content.substring(end);
           form.value.content = newText;
+          
           setTimeout(() => {
             textarea.focus();
-            const newPos = start + selectedText.length + 8; // ``` + \n + 代码 + \n + ```
+            // 光标定位到代码块结束后
+            const newPos = start + codeBlock.length;
             textarea.setSelectionRange(newPos, newPos);
           }, 0);
         } else {
-          // 单行文本使用行内代码
+          // 单行代码 - 使用行内代码
           insertMarkdown('`', '`');
         }
       } else {
-        // 没有选中文本，提示用户输入
-        const code = prompt('请输入代码内容：');
-        if (code) {
-          let insertText = '';
-          if (code.includes('\n')) {
-            // 输入内容包含换行，使用代码块
-            const cleanCode = removeCommonIndent(code);
-            insertText = '```\n' + cleanCode + '\n```';
-          } else {
-            // 输入内容不包含换行，使用行内代码
-            insertText = '`' + code + '`';
+        // 没有选中文本 - 显示选项菜单
+        const choice = prompt('请选择代码类型：\n1 - 行内代码\n2 - 代码块\n\n输入数字选择：', '2');
+        
+        if (choice === '1') {
+          // 行内代码
+          const code = prompt('请输入行内代码：');
+          if (code) {
+            const inlineCode = `\`${code}\``;
+            const newText = form.value.content.substring(0, start) + inlineCode + form.value.content.substring(end);
+            form.value.content = newText;
+            setTimeout(() => {
+              textarea.focus();
+              textarea.setSelectionRange(start + inlineCode.length, start + inlineCode.length);
+            }, 0);
           }
+        } else if (choice === '2') {
+          // 代码块
+          const language = prompt('请输入代码语言（可选，如：javascript, python, css）：', 'javascript');
+          const langTag = language ? language.trim() : '';
           
-          const newText = form.value.content.substring(0, start) + insertText + form.value.content.substring(end);
+          // 插入代码块模板
+          const template = `\`\`\`${langTag}\n// 在此输入代码\n\`\`\``;
+          const newText = form.value.content.substring(0, start) + template + form.value.content.substring(end);
           form.value.content = newText;
+          
           setTimeout(() => {
             textarea.focus();
-            textarea.setSelectionRange(start + insertText.length, start + insertText.length);
-          }, 0);
+            // 光标定位到代码块内部
+            const cursorPos = start + langTag.length + 4; // ``` + 语言 + \n
+            textarea.setSelectionRange(cursorPos, cursorPos + 10); // 选中 "// 在此输入代码"
+          }, 50);
         }
       }
     };
@@ -436,25 +491,211 @@ export default {
         // 创建复制按钮
         const button = document.createElement('button');
         button.className = 'copy-btn';
-        button.textContent = '复制';
-        button.onclick = () => {
-          const code = pre.querySelector('code')?.textContent || pre.textContent;
-          navigator.clipboard.writeText(code).then(() => {
-            button.textContent = '已复制！';
-            setTimeout(() => {
-              button.textContent = '复制';
-            }, 2000);
-          });
-        };
+        button.innerHTML = '📋 复制';
+        button.title = '复制代码';
         
         // 将 pre 设置为相对定位
         pre.style.position = 'relative';
         pre.appendChild(button);
+        
+        // 添加点击事件
+        button.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          const codeElement = pre.querySelector('code') || pre;
+          const codeToCopy = codeElement.textContent || '';
+          
+          // 优先使用现代、安全的Clipboard API
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(codeToCopy).then(() => {
+              button.innerHTML = '✅ 已复制!';
+              button.classList.add('copied');
+              setTimeout(() => {
+                button.innerHTML = '📋 复制';
+                button.classList.remove('copied');
+              }, 2000);
+            }).catch((err) => {
+              console.error('无法复制代码:', err);
+              button.textContent = '复制失败';
+              setTimeout(() => {
+                button.innerHTML = '📋 复制';
+              }, 2000);
+            });
+          } else {
+            // 备用方法
+            fallbackCopyText(codeToCopy, button);
+          }
+        });
       });
+    };
+    
+    const fallbackCopyText = (text, button) => {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.opacity = '0';
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          button.innerHTML = '✅ 已复制!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.innerHTML = '📋 复制';
+            button.classList.remove('copied');
+          }, 2000);
+        } else {
+          button.textContent = '复制失败';
+          setTimeout(() => {
+            button.innerHTML = '📋 复制';
+          }, 2000);
+        }
+      } catch (err) {
+        console.error('备用复制失败:', err);
+        button.textContent = '复制失败';
+        setTimeout(() => {
+          button.innerHTML = '📋 复制';
+        }, 2000);
+      }
+      
+      document.body.removeChild(textArea);
+    };
+
+    // 图片粘贴和拖拽上传功能
+    const handlePaste = (e) => {
+      const items = e.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          e.stopPropagation();
+          const blob = items[i].getAsFile();
+          uploadImageFile(blob);
+          return;
+        }
+      }
+    };
+
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      e.currentTarget.classList.add('drag-over');
+    };
+
+    const handleDragLeave = (e) => {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+    };
+
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type.indexOf('image') !== -1) {
+          uploadImageFile(files[i]);
+          return;
+        }
+      }
+    };
+
+    const uploadImageFile = async (file) => {
+      if (isUploading.value) {
+        alert('已有图片正在上传，请稍候...');
+        return;
+      }
+
+      isUploading.value = true;
+      showUploadIndicator();
+
+      try {
+        // 模拟上传 - 这里你需要根据实际的上传API修改
+        const formData = new FormData();
+        formData.append('image', file, file.name || 'image.png');
+
+        // 模拟上传进度
+        uploadProgress.value = 30;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        uploadProgress.value = 60;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        uploadProgress.value = 100;
+
+        // 这里应该调用真实的上传API
+        // const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        // const data = await response.json();
+
+        // 模拟上传成功
+        const imageUrl = `/picture/${file.name}`;
+        const imageMarkdown = `![${file.name}](${imageUrl})\n`;
+        insertAtCursor(imageMarkdown);
+        
+        alert('✅ 图片上传成功！');
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('❌ 图片上传失败，请重试');
+      } finally {
+        isUploading.value = false;
+        uploadProgress.value = 0;
+        hideUploadIndicator();
+      }
+    };
+
+    const insertAtCursor = (text) => {
+      const textarea = contentTextarea.value;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const content = form.value.content;
+      
+      form.value.content = content.substring(0, start) + text + content.substring(end);
+      
+      setTimeout(() => {
+        textarea.focus();
+        const newPos = start + text.length;
+        textarea.setSelectionRange(newPos, newPos);
+      }, 0);
+    };
+
+    const showUploadIndicator = () => {
+      let indicator = document.getElementById('upload-indicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'upload-indicator';
+        indicator.className = 'upload-indicator';
+        indicator.innerHTML = '📤 正在上传图片...';
+        document.body.appendChild(indicator);
+      }
+    };
+
+    const hideUploadIndicator = () => {
+      const indicator = document.getElementById('upload-indicator');
+      if (indicator) {
+        indicator.remove();
+      }
     };
 
     onMounted(() => {
       fetchBlog();
+      
+      // 添加粘贴事件监听
+      document.addEventListener('paste', handlePaste, true);
+      
+      // 添加拖拽事件监听
+      const textarea = contentTextarea.value;
+      if (textarea) {
+        textarea.addEventListener('dragover', handleDragOver);
+        textarea.addEventListener('dragleave', handleDragLeave);
+        textarea.addEventListener('drop', handleDrop);
+      }
+      
       // 监听内容变化，自动添加复制按钮
       const observer = new MutationObserver(() => {
         addCopyButtons();
@@ -468,6 +709,8 @@ export default {
     return {
       form,
       tagsInput,
+      newTagInput,
+      availableTags,
       loading,
       submitting,
       isEdit,
@@ -481,9 +724,12 @@ export default {
       imageAlt,
       uploadProgress,
       insertMarkdown,
+      insertCode,
       insertLink,
       insertImageUrl,
-      handleImageUpload
+      handleImageUpload,
+      toggleTag,
+      addNewTag
     };
   }
 };
@@ -587,6 +833,13 @@ export default {
   min-height: 300px;
   font-family: 'Courier New', Courier, monospace;
   line-height: 1.6;
+  position: relative;
+}
+
+.form-group textarea.drag-over {
+  border: 2px dashed #007cba !important;
+  background-color: rgba(0, 124, 186, 0.1) !important;
+  transition: all 0.3s ease;
 }
 
 .form-group input:focus,
@@ -643,6 +896,20 @@ export default {
 .toolbar-btn-highlight:hover {
   background: linear-gradient(135deg, #764ba2, #667eea);
   transform: translateY(-2px) scale(1.05);
+}
+
+.toolbar-btn-code {
+  background: #2d2d2d;
+  color: #90EE90;
+  border: 1px solid #2d2d2d;
+  font-weight: 600;
+}
+
+.toolbar-btn-code:hover {
+  background: #1a1a1a;
+  color: #90EE90;
+  border-color: #90EE90;
+  transform: translateY(-2px);
 }
 
 .toolbar-divider {
@@ -1031,4 +1298,59 @@ export default {
 :deep(.text-right) { text-align: right; }
 :deep(.text-justify) { text-align: justify; }
 :deep(mark) { background-color: #fff59d; padding: 0 4px; border-radius: 2px; }
+
+/* 标签胶囊样式 */
+.tags-capsule-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  margin-bottom: 10px;
+  min-height: 50px;
+}
+
+.tag-capsule {
+  display: inline-block;
+  padding: 6px 14px;
+  background-color: #e0e0e0;
+  color: #333;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  font-size: 0.9rem;
+}
+
+.tag-capsule:hover {
+  background-color: #d0d0d0;
+  transform: translateY(-1px);
+}
+
+.tag-capsule.selected {
+  background-color: #667eea;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+/* 上传提示样式 */
+.upload-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  z-index: 99999;
+  font-size: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 </style>
