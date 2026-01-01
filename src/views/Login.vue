@@ -36,8 +36,9 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { generateSecureToken, isAuthenticated } from '../utils/auth';
 
 export default {
   name: 'Login',
@@ -46,29 +47,95 @@ export default {
     const password = ref('');
     const loading = ref(false);
     const error = ref('');
+    const loginAttempts = ref(0);
+    const maxAttempts = 5;
+    const lockoutTime = 15 * 60 * 1000; // 15分钟
+
+    // 组件挂载时检查是否已登录
+    onMounted(() => {
+      // 如果已经登录，直接重定向到后台
+      if (isAuthenticated()) {
+        router.push('/admin');
+      }
+
+      // 检查是否有登录锁定
+      const lockoutEndTime = localStorage.getItem('loginLockoutTime');
+      if (lockoutEndTime) {
+        const now = Date.now();
+        const remainingTime = parseInt(lockoutEndTime) - now;
+        
+        if (remainingTime > 0) {
+          const minutes = Math.ceil(remainingTime / (1000 * 60));
+          error.value = `登录尝试过多，请在 ${minutes} 分钟后重试`;
+          loading.value = true;
+          setTimeout(() => {
+            loading.value = false;
+            error.value = '';
+            localStorage.removeItem('loginLockoutTime');
+            loginAttempts.value = 0;
+          }, remainingTime);
+        } else {
+          // 锁定时间已过，清除锁定
+          localStorage.removeItem('loginLockoutTime');
+          loginAttempts.value = parseInt(localStorage.getItem('loginAttempts') || '0');
+        }
+      } else {
+        loginAttempts.value = parseInt(localStorage.getItem('loginAttempts') || '0');
+      }
+    });
 
     const handleLogin = async () => {
+      // 检查是否被锁定
+      const lockoutEndTime = localStorage.getItem('loginLockoutTime');
+      if (lockoutEndTime && Date.now() < parseInt(lockoutEndTime)) {
+        const minutes = Math.ceil((parseInt(lockoutEndTime) - Date.now()) / (1000 * 60));
+        error.value = `登录已锁定，请在 ${minutes} 分钟后重试`;
+        return;
+      }
+
+      if (!password.value) {
+        error.value = '请输入密码';
+        return;
+      }
+
       loading.value = true;
       error.value = '';
 
-      // 简单的密码验证（实际环境中应该调用后端API验证）
-      // 你可以修改这里的密码
-      const ADMIN_PASSWORD = '123456'; // 请修改为你自己的密码
+      // 密码验证（请修改为你自己的密码）
+      const ADMIN_PASSWORD = '123456';
 
       // 模拟网络延迟
       await new Promise(resolve => setTimeout(resolve, 500));
 
       if (password.value === ADMIN_PASSWORD) {
-        // 登录成功，保存token到localStorage
-        const token = btoa(`admin:${Date.now()}`); // 简单的token生成
-        localStorage.setItem('adminToken', token);
-        localStorage.setItem('loginTime', Date.now().toString());
+        // 登录成功，生成安全token
+        const tokenData = generateSecureToken();
+        localStorage.setItem('adminToken', tokenData.token);
+        localStorage.setItem('loginTime', tokenData.timestamp.toString());
         
+        // 清除登录尝试计数
+        localStorage.removeItem('loginAttempts');
+        localStorage.removeItem('loginLockoutTime');
+        loginAttempts.value = 0;
+
         // 跳转到管理页面
         router.push('/admin');
       } else {
-        error.value = '密码错误，请重试';
-        password.value = '';
+        // 登录失败，增加尝试次数
+        loginAttempts.value++;
+        localStorage.setItem('loginAttempts', loginAttempts.value.toString());
+
+        if (loginAttempts.value >= maxAttempts) {
+          // 达到最大尝试次数，锁定账户
+          const lockoutEndTime = Date.now() + lockoutTime;
+          localStorage.setItem('loginLockoutTime', lockoutEndTime.toString());
+          error.value = `登录尝试过多，账户已锁定 15 分钟，请稍后再试`;
+          password.value = '';
+        } else {
+          const remaining = maxAttempts - loginAttempts.value;
+          error.value = `密码错误（还有 ${remaining} 次尝试机会）`;
+          password.value = '';
+        }
       }
 
       loading.value = false;

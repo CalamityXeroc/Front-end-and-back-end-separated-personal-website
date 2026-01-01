@@ -1,24 +1,34 @@
 <template>
   <div class="admin">
-    <div class="admin-header">
-      <div class="header-left">
-        <h1>📝 博客管理后台</h1>
-        <span class="welcome-text">欢迎，管理员</span>
-      </div>
-      <div class="header-right">
-        <router-link to="/admin/new" class="btn-new">+ 写新博客</router-link>
-        <button @click="handleLogout" class="btn-logout">🚪 退出登录</button>
+    <!-- 未授权提示 -->
+    <div v-if="unauthorized" class="unauthorized-alert">
+      <div class="alert-content">
+        <p>🔒 您没有访问权限，请先登录</p>
+        <p class="alert-small">即将重定向到登录页...</p>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="blog-list">
-      <div v-if="blogs.length === 0" class="empty">
-        <p>还没有博客，点击上方按钮创建第一篇吧！</p>
+    <!-- 正常内容 -->
+    <template v-else>
+      <div class="admin-header">
+        <div class="header-left">
+          <h1>📝 博客管理后台</h1>
+          <span class="welcome-text">欢迎，管理员</span>
+        </div>
+        <div class="header-right">
+          <router-link to="/admin/new" class="btn-new">+ 写新博客</router-link>
+          <button @click="handleLogout" class="btn-logout">🚪 退出登录</button>
+        </div>
       </div>
-      <div v-else class="table-wrapper">
-        <table>
+
+      <div v-if="loading" class="loading">加载中...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <div v-else class="blog-list">
+        <div v-if="blogs.length === 0" class="empty">
+          <p>还没有博客，点击上方按钮创建第一篇吧！</p>
+        </div>
+        <div v-else class="table-wrapper">
+          <table>
           <thead>
             <tr>
               <th>ID</th>
@@ -88,6 +98,7 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -95,7 +106,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { blogApi, commentApi } from '../api/index';
-import { logout } from '../utils/auth';
+import { logout, isAuthenticated } from '../utils/auth';
 
 export default {
   name: 'Admin',
@@ -104,6 +115,7 @@ export default {
     const blogs = ref([]);
     const loading = ref(true);
     const error = ref(null);
+    const unauthorized = ref(false);
     
     // 留言管理相关状态
     const showCommentsModal = ref(false);
@@ -111,7 +123,26 @@ export default {
     const currentBlogTitle = ref('');
     const loadingComments = ref(false);
 
+    // 验证用户身份
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        unauthorized.value = true;
+        loading.value = false;
+        // 3秒后重定向到登录页
+        setTimeout(() => {
+          router.push('/login');
+        }, 3000);
+        return false;
+      }
+      return true;
+    };
+
     const fetchBlogs = async () => {
+      // 首先检查身份验证
+      if (!checkAuth()) {
+        return;
+      }
+
       loading.value = true;
       try {
         const response = await blogApi.getAll();
@@ -206,6 +237,7 @@ export default {
       blogs,
       loading,
       error,
+      unauthorized,
       formatDate,
       deleteBlog,
       handleLogout,
@@ -227,6 +259,36 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
+}
+
+/* 未授权提示样式 */
+.unauthorized-alert {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+}
+
+.alert-content {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.alert-content p {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.alert-small {
+  font-size: 0.9em !important;
+  color: #7f8c8d !important;
+  margin-top: 10px !important;
 }
 
 .admin-header {
