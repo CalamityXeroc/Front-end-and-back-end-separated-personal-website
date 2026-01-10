@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load static %}
+{% load markdown_extras %}
+{% block content %}
+    <div class="blog-post" id="post-list-container">
+        {% include 'post_list_partial.html' %}
+    </div><!-- /.blog-post -->
+
+{% endblock %}

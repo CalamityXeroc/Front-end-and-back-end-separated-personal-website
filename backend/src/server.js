@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(cors()); // 允许跨域请求
-app.use(express.json()); // 解析 JSON 请求体
-app.use(express.urlencoded({ extended: true })); // 解析 URL 编码请求体
+app.use(express.json({ limit: '50mb' })); // 解析 JSON 请求体，支持大文件
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // 解析 URL 编码请求体
 app.use(morgan('dev')); // 请求日志
 
 // 静态文件服务（上传的图片）

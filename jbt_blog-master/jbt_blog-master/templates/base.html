@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} 金笔头博客 {% endblock %}</title>
+    
+    <!-- Google Fonts - 程序员友好字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" type="text/css" href="{% static 'css/pure-min.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/grids-responsive-min.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/blog.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/pygments.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/font-awesome.min.css' %}"/>
+    
+    <!-- D3.js for tag cloud -->
+    <script src="{% static 'js/d3.min.js' %}"></script>
+    <script src="{% static 'js/tagcloud-d3.js' %}"></script>
+    <!-- Infinite Scroll -->
+    <script src="{% static 'js/infinite_scroll.js' %}"></script>
+</head>
+<body>
+<div id="layout" class="pure-g">
+    <!--左侧边栏 开始-->
+    <div class="sidebar pure-u-1 pure-u-md-1-4">
+        <div class="header">
+            <!-- 移动端折叠按钮 -->
+            <button id="sidebar-toggle" class="sidebar-toggle-button" aria-label="Toggle sidebar">
+                <i class="fa fa-bars"></i>
+            </button>
+
+            <!-- 头像和基本信息 -->
+            <div class="profile-section">
+                <div class="author-avatar">
+                    <img src='{% static "image/avatar.png" %}' alt="作者头像" class="sidebar-avatar">
+                </div>
+                <h1 class="brand-title">
+                    <a href="{% url 'home' %}" style="text-decoration: none">金笔头博客</a>
+                </h1>
+                <h2 class="brand-tagline">Stay hungry, Stay foolish!</h2>
+                
+                <!-- 社交媒体链接 -->
+                <div class="social-links">
+                    <a href="#" class="social-link" title="微信公众号" id="wechat-modal-trigger">
+                        <span class="custom-icon icon-wechat"></span>
+                    </a>
+                    <a href="https://github.com/leeyis/jbt_blog" class="social-link" title="Github" target="_blank">
+                        <span class="custom-icon icon-github"></span>
+                    </a>
+                    <a href="https://space.bilibili.com/599123958?spm_id_from=333.33.0.0" class="social-link" title="Bilibili" target="_blank">
+                        <span class="custom-icon icon-bilibili"></span>
+                    </a>
+                    <a href="https://www.zhihu.com/people/badguy-95" class="social-link" title="知乎" target="_blank">
+                        <span class="custom-icon icon-zhihu"></span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 可折叠的导航部分 -->
+            <div id="collapsible-nav">
+                <!-- 分类导航区块 -->
+                <div class="nav-card">
+                    <div class="nav-section">
+                        <h3 class="section-title"><i class="fa fa-folder-open-o"></i>文章分类</h3>
+                        <ul class="category-list">
+                            {% for category in category_list %}
+                                <li class="category-item">
+                                    <a href="{% url 'category_menu' id=category.id %}">
+                                        {{ category.name }}
+                                        <span class="category-count">({{ category.article_set.count }})</span>
+                                    </a>
+                                </li>
+                            {% empty %}
+                                <li class="empty-state">
+                                    <i class="fa fa-folder-o"></i>
+                                    <p>暂无分类</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 标签云区块 -->
+                <div class="nav-card">
+                    <div class="nav-section">
+                        <h3 class="section-title"><i class="fa fa-tags"></i>文章标签</h3>
+                        
+                        <!-- PC端：3D标签云 -->
+                        <div class="tag-cloud-container">
+                            {% if tag_cloud %}
+                                <!-- 隐藏的数据元素，供D3.js读取 -->
+                                {% for tag in tag_cloud %}
+                                    <div class="tag-data" style="display: none;" 
+                                         data-name="{{ tag.name }}" 
+                                         data-count="{{ tag.usage_count }}" 
+                                         data-url="{% url 'search_tag' tag=tag.name %}">
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fa fa-tag"></i>
+                                    <p>暂无标签</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 移动端：文字标签列表 -->
+                        <ul class="tag-list-mobile">
+                            {% for tag in tag_cloud %}
+                                <li class="tag-item">
+                                    <a href="{% url 'search_tag' tag=tag.name %}">
+                                        {{ tag.name }}
+                                        <span class="tag-count">({{ tag.usage_count }})</span>
+                                    </a>
+                                </li>
+                            {% empty %}
+                                <li class="empty-state">
+                                    <i class="fa fa-tag"></i>
+                                    <p>暂无标签</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 文章归档区块 -->
+                <div class="nav-card">
+                    <div class="nav-section">
+                        <h3 class="section-title"><i class="fa fa-archive"></i>文章归档</h3>
+                        <ul class="archive-list">
+                            {% for m in months %}
+                                <li class="archive-item">
+                                    <a href="{% url 'archives' year=m.year month=m.month %}">
+                                        <span class="archive-date">{{ m.date | date:'Y年m月' }}</span><span class="archive-count">({{ m.count }})</span>
+                                    </a>
+                                </li>
+                            {% empty %}
+                                <li class="empty-state">
+                                    <i class="fa fa-calendar-o"></i>
+                                    <p>暂无归档</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--左侧边栏 结束-->
+    <!--右侧内容 开始-->
+    <div class="content pure-u-1 pure-u-md-3-4">
+        {% block content %}{% endblock %}
+    </div>
+    <!--右侧内容 结束-->
+</div>
+<!-- Back to Top Button -->
+<a href="#" id="back-to-top" title="回到顶部">
+    <i class="fa fa-arrow-up"></i>
+</a>
+
+<!-- WeChat Modal Structure -->
+<div id="wechat-modal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <img src="{% static 'image/wechat.png' %}" alt="微信公众号二维码">
+        <p>关注我，不迷路</p>
+    </div>
+</div>
+
+<script src="{% static 'js/copy_code.js' %}"></script>
+<script src="{% static 'js/back_to_top.js' %}"></script>
+<script src="{% static 'js/ajax_navigation.js' %}"></script>
+<script src="{% static 'js/wechat_modal.js' %}"></script>
+<script src="{% static 'js/mobile_nav.js' %}"></script>
+</body>
+</html>

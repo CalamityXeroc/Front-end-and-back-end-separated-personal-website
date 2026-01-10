@@ -13,7 +13,9 @@
       <div class="tags" v-if="post.tags && post.tags.length">
         <span v-for="tag in post.tags" :key="tag" class="tag">{{ tag }}</span>
       </div>
-      <div class="content" v-html="renderedContent"></div>
+
+      <!-- Changed from v-html to Ref for better large content handling -->
+      <div class="content" ref="contentRef"></div>
       
       <!-- 留言区 -->
       <CommentSection :blogId="post.id" />
@@ -24,7 +26,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { blogApi } from '../api/index';
 import MarkdownIt from 'markdown-it';
@@ -61,11 +63,7 @@ export default {
     const post = ref(null);
     const loading = ref(true);
     const error = ref(null);
-
-    const renderedContent = computed(() => {
-      if (!post.value || !post.value.content) return '';
-      return md.render(post.value.content);
-    });
+    const contentRef = ref(null);
 
     const fetchPost = async () => {
       try {
@@ -81,6 +79,27 @@ export default {
       }
     };
 
+    // 监听 post 变化并手动更新 DOM
+    watch(() => post.value, async (newPost) => {
+      if (newPost && newPost.content) {
+        // 等待 DOM 更新，确保 contentRef 存在
+        await nextTick();
+        if (contentRef.value) {
+          // 渲染 HTML
+          let rawHtml = md.render(newPost.content);
+          
+          // 关键修复：转义非代码块中的 <script> 标签，防止浏览器解析错误导致内容截断
+          // 代码块中的标签已经被 markdown-it 转义为 &lt;script&gt; 所以不受影响
+          rawHtml = rawHtml.replace(/<script\b/gi, '&lt;script').replace(/<\/script>/gi, '&lt;/script&gt;');
+          
+          contentRef.value.innerHTML = rawHtml;
+          
+          // Add extra features
+          addCopyButtons();
+        }
+      }
+    });
+
     const formatDate = (dateString) => {
       const date = new Date(dateString);
       return date.toLocaleDateString('zh-CN', {
@@ -91,7 +110,9 @@ export default {
     };
 
     const addCopyButtons = () => {
-      const preElements = document.querySelectorAll('.content pre');
+      // Create a safely scoped query
+      if (!contentRef.value) return;
+      const preElements = contentRef.value.querySelectorAll('pre');
       preElements.forEach(pre => {
         // 避免重复添加按钮
         if (pre.querySelector('.copy-btn')) return;
@@ -179,15 +200,14 @@ export default {
 
     onMounted(async () => {
       await fetchPost();
-      // 等待 DOM 更新后添加复制按钮
-      setTimeout(addCopyButtons, 100);
+      // addCopyButtons carries out in watch
     });
 
     return {
       post,
       loading,
       error,
-      renderedContent,
+      contentRef, // Export Ref
       formatDate
     };
   }

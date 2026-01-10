@@ -7,7 +7,7 @@
 
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else class="editor-content">
-      <form @submit.prevent="handleSubmit">
+      <form @submit.prevent="handleSubmit" class="editor-form">
         <div class="form-group">
           <label for="title">标题 *</label>
           <input
@@ -164,17 +164,18 @@
           <router-link to="/admin" class="btn-cancel">取消</router-link>
         </div>
       </form>
+    </div>
 
-      <div class="preview-section" v-if="form.content">
-        <h3>📄 预览</h3>
-        <div class="preview-content" v-html="renderedContent"></div>
-      </div>
+    <!-- 预览区单独放在下方，不受其他约束 -->
+    <div v-if="form.content" class="preview-section-standalone">
+      <h3>📄 实时预览</h3>
+      <div class="preview-content" ref="previewRef"></div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { blogApi } from '../api/index';
 import MarkdownIt from 'markdown-it';
@@ -211,12 +212,14 @@ export default {
     const isEdit = computed(() => !!route.params.id);
     const contentTextarea = ref(null);
     const fileInput = ref(null);
+    const previewRef = ref(null);
     
     const showImageDialog = ref(false);
     const imageMode = ref('url');
     const imageUrl = ref('');
     const imageAlt = ref('');
     const uploadProgress = ref(0);
+    const showPreviewSource = ref(false);
     
     const form = ref({
       title: '',
@@ -695,16 +698,32 @@ export default {
         textarea.addEventListener('dragleave', handleDragLeave);
         textarea.addEventListener('drop', handleDrop);
       }
-      
-      // 监听内容变化，自动添加复制按钮
-      const observer = new MutationObserver(() => {
-        addCopyButtons();
-      });
-      const previewContent = document.querySelector('.preview-content');
-      if (previewContent) {
-        observer.observe(previewContent, { childList: true, subtree: true });
-      }
     });
+
+    // 监听内容变化，直接操作 DOM 更新预览
+    watch(
+      () => form.value.content,
+      async (newContent) => {
+        // v-if="form.content" controls the visibility, so we must wait for nextTick
+        if (newContent) {
+          await nextTick();
+          if (previewRef.value) {
+            try {
+              let html = md.render(newContent);
+              // 关键修复：转义非代码块中的 <script> 标签，防止预览区域被截断
+              html = html.replace(/<script\b/gi, '&lt;script').replace(/<\/script>/gi, '&lt;/script&gt;');
+              
+              previewRef.value.innerHTML = html;
+              // Add copy buttons logic if needed, or simple buttons
+            } catch (err) {
+              console.error('Markdown 渲染错误:', err);
+              previewRef.value.innerHTML = '<p style="color:red">渲染错误</p>';
+            }
+          }
+        }
+      },
+      { immediate: true }
+    );
 
     return {
       form,
@@ -718,6 +737,7 @@ export default {
       handleSubmit,
       contentTextarea,
       fileInput,
+      previewRef,
       showImageDialog,
       imageMode,
       imageUrl,
@@ -729,7 +749,8 @@ export default {
       insertImageUrl,
       handleImageUpload,
       toggleTag,
-      addNewTag
+      addNewTag,
+      showPreviewSource
     };
   }
 };
@@ -786,14 +807,21 @@ export default {
 }
 
 .editor-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  display: block !important;
+  width: 100%;
+  max-width: none;
+}
+
+.editor-form {
+  width: 100% !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 @media (max-width: 1024px) {
   .editor-content {
-    grid-template-columns: 1fr;
+    display: block;
   }
 }
 
@@ -1159,29 +1187,42 @@ export default {
 }
 
 .preview-section {
-  position: sticky;
-  top: 20px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  position: relative;
+  top: 0;
+  max-height: none;
+  overflow-y: visible;
+  padding: 20px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
 }
 
-.preview-section h3 {
-  font-size: 1.5rem;
-  margin: 0 0 20px 0;
-  color: #333;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e0e0e0;
+.preview-section-standalone {
+  width: 100%;
+  max-width: 900px;
+  margin: 60px auto 0;
+  padding: 30px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+}
+
+.preview-section-standalone h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
 }
 
 .preview-content {
-  background: white;
-  border: 2px solid #e0e0e0;
+  width: 100%;
+  background: #fafafa;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  padding: 32px;
   line-height: 1.8;
   color: #333;
 }
 
+/* 预览内容样式 */
 .preview-content h1 {
   font-size: 2rem;
   margin: 24px 0 16px 0;
@@ -1214,6 +1255,31 @@ export default {
   margin: 6px 0;
 }
 
+.preview-content code {
+  background: #90EE90;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+  color: #2d5016;
+}
+
+.preview-content pre {
+  background: #90EE90;
+  color: #2d5016;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+  position: relative;
+}
+
+.preview-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
 .preview-content blockquote {
   border-left: 4px solid #667eea;
   padding-left: 16px;
@@ -1225,71 +1291,38 @@ export default {
   border-radius: 0 8px 8px 0;
 }
 
-.preview-content :deep(code) {
-  background: #90EE90;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.9em;
-  color: #2d5016;
-}
-
-.preview-content :deep(pre) {
-  background: #90EE90 !important;
-  color: #2d5016;
-  padding: 16px;
+.preview-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 20px 0;
   border-radius: 8px;
-  overflow-x: auto;
-  margin: 16px 0;
-  position: relative;
 }
 
-.preview-content :deep(pre code) {
-  background: none;
-  color: inherit;
-  padding: 0;
+.preview-content a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.preview-content a:hover {
+  text-decoration: underline;
 }
 
 .preview-content :deep(.copy-btn) {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: white;
   color: #2d5016;
   border: 1px solid #2d5016;
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 0.85em;
   cursor: pointer;
-  transition: all 0.3s ease;
   font-weight: 600;
 }
 
 .preview-content :deep(.copy-btn:hover) {
-  background: white;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.preview-content img {
-  display: block; /* 让图片独占一行 */
-  max-width: 90%; /* 限制最大宽度，留出呼吸感 */
-  margin: 20px auto; /* 居中显示 */
-  height: auto;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.preview-content a {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.preview-content a:hover {
-  color: #764ba2;
-  text-decoration: underline;
+  background: #f0f0f0;
 }
 
 /* 排版样式 */
@@ -1298,6 +1331,14 @@ export default {
 :deep(.text-right) { text-align: right; }
 :deep(.text-justify) { text-align: justify; }
 :deep(mark) { background-color: #fff59d; padding: 0 4px; border-radius: 2px; }
+
+.preview-section h3 {
+  font-size: 1.5rem;
+  margin: 0 0 20px 0;
+  color: #333;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e0e0;
+}
 
 /* 标签胶囊样式 */
 .tags-capsule-container {
