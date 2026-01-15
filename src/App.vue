@@ -3,7 +3,7 @@
     <Header v-if="$route.path !== '/'" />
     <router-view />
     <footer class="site-footer">
-      <p>© 2025 佰世铜</p>
+      <p>© 2025-2026 佰世铜</p>
       <p><a href="https://beian.miit.gov.cn/">京ICP备2025153719号-1</a></p>
       <p class="beian-police">
         <img src="/picture/备案图标.png" alt="公安备案" class="beian-icon">

@@ -47,6 +47,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%; /* Ensure card fills the grid cell */
 }
 
 .blog-card:hover {
@@ -65,12 +66,23 @@ export default {
   font-size: 1.5em;
   margin: 0;
   color: #2c3e50;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limit title to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .blog-excerpt {
   font-size: 0.95em;
   color: #666;
   line-height: 1.6;
+  flex-grow: 1; /* Allow excerpt to take available space but respect clamp */
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limit excerpt to 3 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .blog-meta {
@@ -99,6 +111,7 @@ export default {
   text-decoration: none;
   font-weight: bold;
   align-self: flex-start;
+  margin-top: auto; /* Push to bottom */
 }
 
 .read-more:hover {
