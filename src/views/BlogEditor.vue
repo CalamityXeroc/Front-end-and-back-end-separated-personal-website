@@ -90,6 +90,7 @@
             <button type="button" @click="insertMarkdown('> ', '')" class="toolbar-btn" title="引用">❝</button>
             <button type="button" @click="insertCode" class="toolbar-btn toolbar-btn-code" title="插入代码">💻 代码</button>
             <span class="toolbar-divider">|</span>
+            <button type="button" @click="showTableDialog = true" class="toolbar-btn toolbar-btn-highlight" title="插入表格">📊 表格</button>
             <button type="button" @click="insertLink" class="toolbar-btn" title="插入链接">🔗</button>
             <button type="button" @click="showImageDialog = true" class="toolbar-btn toolbar-btn-highlight" title="插入图片">🖼️ 插入图片</button>
           </div>
@@ -127,6 +128,56 @@
                 </div>
                 <div class="dialog-actions">
                   <button type="button" @click="showImageDialog = false" class="btn-secondary">关闭</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 表格插入对话框 -->
+          <div v-if="showTableDialog" class="table-dialog">
+            <div class="dialog-overlay" @click="showTableDialog = false"></div>
+            <div class="dialog-content table-dialog-content">
+              <h3>📊 插入表格</h3>
+              <div class="dialog-tabs">
+                <button type="button" :class="['tab-btn', {active: tableMode === 'manual'}]" @click="tableMode = 'manual'">手动创建</button>
+                <button type="button" :class="['tab-btn', {active: tableMode === 'import'}]" @click="tableMode = 'import'">导入数据</button>
+              </div>
+
+              <div v-if="tableMode === 'manual'" class="dialog-body">
+                <div class="form-row">
+                  <label>行数：</label>
+                  <input v-model.number="tableRows" type="number" min="1" max="50" class="dialog-input" />
+                </div>
+                <div class="form-row">
+                  <label>列数：</label>
+                  <input v-model.number="tableCols" type="number" min="1" max="10" class="dialog-input" />
+                </div>
+                <div class="dialog-actions">
+                  <button type="button" @click="insertBlankTable" class="btn-primary">创建表格</button>
+                  <button type="button" @click="showTableDialog = false" class="btn-secondary">取消</button>
+                </div>
+              </div>
+
+              <div v-else class="dialog-body">
+                <p class="import-tip">💡 提示：粘贴表格数据，支持Tab分隔或回车换行（每行为表格行）</p>
+                <textarea 
+                  v-model="tableDataInput"
+                  class="table-textarea"
+                  placeholder="方法	说明
+getFullYear()	获取年份，取值为4位数字
+getMonth()	获取月份，取值为0到11
+getDate()	获取日数，取值为1~31"
+                  rows="8"
+                ></textarea>
+                <div class="import-options">
+                  <label>
+                    <input v-model="tableHasHeader" type="checkbox" />
+                    第一行作为表头
+                  </label>
+                </div>
+                <div class="dialog-actions">
+                  <button type="button" @click="insertTableFromData" class="btn-primary">导入表格</button>
+                  <button type="button" @click="showTableDialog = false" class="btn-secondary">取消</button>
                 </div>
               </div>
             </div>
@@ -220,6 +271,14 @@ export default {
     const imageAlt = ref('');
     const uploadProgress = ref(0);
     const showPreviewSource = ref(false);
+    
+    // 表格相关状态
+    const showTableDialog = ref(false);
+    const tableMode = ref('manual');
+    const tableRows = ref(3);
+    const tableCols = ref(3);
+    const tableDataInput = ref('');
+    const tableHasHeader = ref(true);
     
     const form = ref({
       title: '',
@@ -725,6 +784,107 @@ export default {
       { immediate: true }
     );
 
+    // 表格功能
+    const insertBlankTable = () => {
+      const rows = Math.max(1, tableRows.value);
+      const cols = Math.max(1, tableCols.value);
+      
+      let table = '';
+      
+      // 表头行
+      table += '| ' + Array(cols).fill('列').map((_, i) => `列${i + 1}`).join(' | ') + ' |\n';
+      table += '| ' + Array(cols).fill('---').join(' | ') + ' |\n';
+      
+      // 数据行
+      for (let i = 0; i < rows - 1; i++) {
+        table += '| ' + Array(cols).fill('').join(' | ') + ' |\n';
+      }
+      
+      const textarea = contentTextarea.value;
+      if (!textarea) return;
+      
+      const start = textarea.selectionStart;
+      form.value.content = form.value.content.substring(0, start) + '\n' + table + '\n' + form.value.content.substring(start);
+      
+      showTableDialog.value = false;
+      tableRows.value = 3;
+      tableCols.value = 3;
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + table.length + 2, start + table.length + 2);
+      }, 0);
+    };
+
+    const insertTableFromData = () => {
+      const data = tableDataInput.value.trim();
+      if (!data) {
+        alert('请输入表格数据');
+        return;
+      }
+
+      // 按回车换行分割行
+      const lines = data.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      if (lines.length === 0) {
+        alert('请输入有效的表格数据');
+        return;
+      }
+
+      // 解析每一行，支持Tab或多个空格分隔
+      const parseRow = (line) => {
+        // 首先尝试Tab分隔
+        if (line.includes('\t')) {
+          return line.split('\t').map(cell => cell.trim());
+        }
+        // 如果没有Tab，则按连续的空格（至少2个）分隔
+        return line.split(/\s{2,}/).map(cell => cell.trim()).filter(cell => cell.length > 0);
+      };
+
+      const rows = lines.map(parseRow);
+      
+      if (rows.length === 0) {
+        alert('无法解析表格数据');
+        return;
+      }
+
+      // 确定最大列数
+      const maxCols = Math.max(...rows.map(row => row.length));
+      
+      // 生成Markdown表格
+      let table = '';
+      
+      rows.forEach((row, idx) => {
+        // 补齐空列
+        while (row.length < maxCols) {
+          row.push('');
+        }
+        
+        table += '| ' + row.join(' | ') + ' |\n';
+        
+        // 第一行后添加分隔符（如果指定为表头）
+        if (idx === 0 && tableHasHeader.value) {
+          table += '| ' + Array(maxCols).fill('---').join(' | ') + ' |\n';
+        }
+      });
+
+      const textarea = contentTextarea.value;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      form.value.content = form.value.content.substring(0, start) + '\n' + table + '\n' + form.value.content.substring(start);
+      
+      showTableDialog.value = false;
+      tableDataInput.value = '';
+      tableHasHeader.value = true;
+      tableMode.value = 'manual';
+
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + table.length + 2, start + table.length + 2);
+      }, 0);
+    };
+
     return {
       form,
       tagsInput,
@@ -750,7 +910,15 @@ export default {
       handleImageUpload,
       toggleTag,
       addNewTag,
-      showPreviewSource
+      showPreviewSource,
+      showTableDialog,
+      tableMode,
+      tableRows,
+      tableCols,
+      tableDataInput,
+      tableHasHeader,
+      insertBlankTable,
+      insertTableFromData
     };
   }
 };
@@ -1393,5 +1561,94 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* 表格对话框样式 */
+.table-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.table-dialog-content {
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.form-row label {
+  min-width: 60px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-row input[type="number"] {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.table-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.table-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.import-tip {
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.import-options {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.import-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: #333;
+}
+
+.import-options input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
 }
 </style>

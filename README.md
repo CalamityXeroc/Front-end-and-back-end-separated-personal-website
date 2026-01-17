@@ -1,6 +1,11 @@
 # 个人网站项目 🌐
 
 > 一个基于 Vue 3 + Node.js 的全栈个人网站，采用前后端分离架构
+> 
+> **Latest Update: 2026年1月17日**
+> - ✨ 新增表格插入和导入功能
+> - 🚀 优化博客编辑器工具栏
+> - 📦 完善启动脚本
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Vue 3](https://img.shields.io/badge/Vue-3-brightgreen.svg)](https://vuejs.org/)
