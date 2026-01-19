@@ -11,6 +11,9 @@ build/
 *.rar
 *.tar.gz
 
+# Public folder (user uploads and media)
+public/
+
 # Environment Variables & Secrets
 .env
 .env.*

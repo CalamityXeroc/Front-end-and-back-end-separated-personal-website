@@ -46,7 +46,17 @@
       </div>
 
       <div v-if="loading" class="loading-state">
-        <div class="loading-spinner"></div>
+        <div class="loader">
+          <div class="cell d-0"></div>
+          <div class="cell d-1"></div>
+          <div class="cell d-2"></div>
+          <div class="cell d-1"></div>
+          <div class="cell d-2"></div>
+          <div class="cell d-2"></div>
+          <div class="cell d-3"></div>
+          <div class="cell d-3"></div>
+          <div class="cell d-4"></div>
+        </div>
         <p>加载中...</p>
       </div>
 
@@ -67,8 +77,8 @@
 
       <div v-if="latestBlogs.length > 0" class="view-more-container">
         <router-link to="/blog" class="view-more-btn">
-          查看更多博客
-          <span class="arrow">→</span>
+          <span class="text">查看更多博客 →</span>
+          <span class="shimmer"></span>
         </router-link>
       </div>
     </section>
@@ -223,46 +233,78 @@ export default {
 .home-nav {
   padding: 0;
   text-align: center;
-  background-color: transparent; /* 移除背景色 */
-  position: absolute; /* 恢复绝对定位 */
-  top: 100vh; /* 定位到Hero区域正下方 */
+  background-color: transparent; 
+  position: absolute; 
+  top: 100vh; 
   width: 100%;
   z-index: 20;
   box-shadow: none;
-  pointer-events: none; /* 容器不阻挡点击 */
+  pointer-events: none; 
   transform: translateY(0);
-  padding-top: 20px; /* 增加顶部间距，让按钮与上方有一段距离 */
+  padding-top: 20px; 
 }
 
 .nav-item {
-  pointer-events: auto; /* 恢复按钮点击 */
+  pointer-events: auto;
+  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   margin: 0 20px;
   padding: 16px 48px;
   text-decoration: none;
-  color: #333;
+  color: #fff;
   font-weight: 700;
   font-size: 1.2rem;
-  border: none; /* 移除边框 */
-  border-radius: 50px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border: none;
+  border-radius: 30px;
+  background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+  background-size: 300%;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  z-index: -1;
+  background: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+  background-size: 400%;
+  border-radius: 35px;
+  opacity: 0;
+  transition: opacity 1s, filter 1s;
 }
 
 .nav-item:hover {
-  background: white;
-  color: #667eea;
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+  animation: nav-gradient 8s linear infinite;
+}
+
+.nav-item:hover::before {
+  opacity: 1;
+  filter: blur(20px);
+}
+
+.nav-item:active {
+  background: linear-gradient(32deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+}
+
+@keyframes nav-gradient {
+  0% {
+    background-position: 0%;
+  }
+  100% {
+    background-position: 400%;
+  }
 }
 
 /* 博客展示区域 */
 .blog-showcase {
-  padding: 160px 40px 80px; /* 增加顶部内边距，给悬浮导航留出空间 */
+  padding: 160px 40px 80px; 
   background: white;
   position: relative;
   z-index: 10;
@@ -272,7 +314,6 @@ export default {
   background-attachment: fixed;
   position: relative;
   overflow: hidden;
-  /* 移除之前的负边距和圆角 */
   margin-top: 0;
   border-radius: 0;
 }
@@ -288,7 +329,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.6); /* 添加半透明白色遮罩，确保文字清晰 */
+  background: rgba(255, 255, 255, 0.6); 
   z-index: 0;
 }
 
@@ -361,19 +402,93 @@ export default {
   color: #667eea;
 }
 
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(102, 126, 234, 0.2);
-  border-top-color: #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.loader {
+  --cell-size: 52px;
+  --cell-spacing: 1px;
+  --cells: 3;
+  --total-size: calc(
+    var(--cells) * (var(--cell-size) + 2 * var(--cell-spacing))
+  );
+  display: flex;
+  flex-wrap: wrap;
+  width: var(--total-size);
+  height: var(--total-size);
   margin: 0 auto 20px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.cell {
+  flex: 0 0 var(--cell-size);
+  margin: var(--cell-spacing);
+  background-color: transparent;
+  box-sizing: border-box;
+  border-radius: 4px;
+  animation: 1.5s ripple ease infinite;
+}
+
+.cell.d-1 {
+  animation-delay: 100ms;
+}
+
+.cell.d-2 {
+  animation-delay: 200ms;
+}
+
+.cell.d-3 {
+  animation-delay: 300ms;
+}
+
+.cell.d-4 {
+  animation-delay: 400ms;
+}
+
+.cell:nth-child(1) {
+  --cell-color: #00ff87;
+}
+
+.cell:nth-child(2) {
+  --cell-color: #0cfd95;
+}
+
+.cell:nth-child(3) {
+  --cell-color: #17fba2;
+}
+
+.cell:nth-child(4) {
+  --cell-color: #23f9b2;
+}
+
+.cell:nth-child(5) {
+  --cell-color: #30f7c3;
+}
+
+.cell:nth-child(6) {
+  --cell-color: #3df5d4;
+}
+
+.cell:nth-child(7) {
+  --cell-color: #45f4de;
+}
+
+.cell:nth-child(8) {
+  --cell-color: #53f1f0;
+}
+
+.cell:nth-child(9) {
+  --cell-color: #60efff;
+}
+
+@keyframes ripple {
+  0% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: var(--cell-color);
+  }
+  60% {
+    background-color: transparent;
+  }
+  100% {
+    background-color: transparent;
   }
 }
 
@@ -588,49 +703,185 @@ export default {
   z-index: 1;
 }
 
+@property --shimmer {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 33deg;
+}
+
+@keyframes shimmer {
+  0% {
+    --shimmer: 0deg;
+  }
+  100% {
+    --shimmer: 360deg;
+  }
+}
+
+@keyframes shine {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes text {
+  0% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: -100% center;
+  }
+}
+
 .view-more-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  --bg: #1e1e1e;
+  --glow-hue: 222deg;
+  --shadow-hue: 180deg;
+  --spring-easing: linear(
+    0,
+    0.002,
+    0.01 0.9%,
+    0.038 1.8%,
+    0.156,
+    0.312 5.8%,
+    0.789 11.1%,
+    1.015 14.2%,
+    1.096,
+    1.157,
+    1.199,
+    1.224 20.3%,
+    1.231,
+    1.231,
+    1.226,
+    1.214 24.6%,
+    1.176 26.9%,
+    1.057 32.6%,
+    1.007 35.5%,
+    0.984,
+    0.968,
+    0.956,
+    0.949 42%,
+    0.946 44.1%,
+    0.95 46.5%,
+    0.998 57.2%,
+    1.007,
+    1.011 63.3%,
+    1.012 68.3%,
+    0.998 84%,
+    1
+  );
+  --spring-duration: 1.33s;
+  display: inline-block;
   text-decoration: none;
-  border-radius: 50px;
+  color: var(--bg);
+  font-weight: 600;
   font-size: 1.1rem;
-  font-weight: 700;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background-image: linear-gradient(
+    315deg,
+    #ffc4ec -10%,
+    #efdbfd 50%,
+    #ffedd6 110%
+  );
+  padding: 0.8em 1.4em;
   position: relative;
-  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 2px 3px 1px hsl(var(--glow-hue) 50% 20% / 50%), inset 0 -10px 20px -10px hsla(var(--shadow-hue), 10%, 90%, 95%);
+  border-radius: 0.66em;
+  scale: 1;
+  transition: all var(--spring-duration) var(--spring-easing);
 }
 
-.view-more-btn::before {
-  content: '';
+.view-more-btn:hover:not(:active),
+.view-more-btn.active {
+  transition-duration: calc(var(--spring-duration) * 0.5);
+  scale: 1.2;
+  box-shadow: 0 4px 8px -2px hsl(var(--glow-hue) 50% 20% / 50%), inset 0 0 0 transparent;
+}
+
+.view-more-btn:active {
+  scale: 1.1;
+  transition-duration: calc(var(--spring-duration) * 0.5);
+}
+
+.view-more-btn .shimmer {
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  transition: left 0.6s;
+  inset: -40px;
+  border-radius: inherit;
+  mask-image: conic-gradient(
+    from var(--shimmer, 0deg),
+    transparent 0%,
+    transparent 10%,
+    black 36%,
+    black 45%,
+    transparent 50%,
+    transparent 60%,
+    black 85%,
+    black 95%,
+    transparent 100%
+  );
+  mask-size: cover;
+  mix-blend-mode: plus-lighter;
+  animation: shimmer 1s linear infinite both;
 }
 
-.view-more-btn:hover::before {
-  left: 100%;
+.view-more-btn:hover .shimmer::before,
+.view-more-btn:hover .shimmer::after,
+.view-more-btn.active .shimmer::before,
+.view-more-btn.active .shimmer::after {
+  opacity: 1;
+  animation: shine 1.2s ease-in 1 forwards;
 }
 
-.view-more-btn:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+.view-more-btn .shimmer::before,
+.view-more-btn .shimmer::after {
+  transition: all 0.5s ease;
+  opacity: 0;
+  content: '';
+  border-radius: inherit;
+  position: absolute;
+  mix-blend-mode: color;
+  inset: 40px;
+  pointer-events: none;
 }
 
-.view-more-btn .arrow {
-  font-size: 1.4rem;
-  transition: transform 0.3s ease;
+.view-more-btn .shimmer::before {
+  box-shadow: 0 0 3px 2px hsl(var(--glow-hue) 20% 95%), 0 0 7px 4px hsl(var(--glow-hue) 20% 80%), 0 0 13px 4px hsl(var(--glow-hue) 50% 70%), 0 0 25px 5px hsl(var(--glow-hue) 100% 70%);
+  z-index: -1;
 }
 
-.view-more-btn:hover .arrow {
-  transform: translateX(8px);
+.view-more-btn .shimmer::after {
+  box-shadow: inset 0 0 0 1px hsl(var(--glow-hue) 70% 95%), inset 0 0 2px 1px hsl(var(--glow-hue) 100% 80%), inset 0 0 5px 2px hsl(var(--glow-hue) 100% 70%);
+  z-index: 2;
+}
+
+.view-more-btn .text {
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-color: var(--bg);
+  background-image: linear-gradient(
+    120deg,
+    transparent,
+    hsla(var(--glow-hue), 100%, 80%, 0.66) 40%,
+    hsla(var(--glow-hue), 100%, 90%, 0.9) 50%,
+    transparent 52%
+  );
+  background-repeat: no-repeat;
+  background-size: 300% 300%;
+  background-position: center 200%;
+}
+
+.view-more-btn:hover .text,
+.view-more-btn.active .text {
+  animation: text 0.66s ease-in 1 both;
 }
 </style>
