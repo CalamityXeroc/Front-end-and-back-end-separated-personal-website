@@ -55,6 +55,31 @@
         </div>
       </section>
 
+      <!-- 地图故事项目 -->
+      <section class="card map-story-card">
+        <h2>🗺️ 地图故事：钟鼓叠春秋·轴脉跃千年——荣获易智瑞杯优胜奖</h2>
+        <div class="project-content">
+          <div class="project-item">
+            <h3>北京中轴线遗产价值评估与活化</h3>
+            <p class="project-desc">
+              本项目以“科学诊断赋能文化永续”为核心，构建“数据-空间-人文”三位一体评估范式。通过AHP-GIS模型与多源数据耦合，精准量化中轴线12处遗产点价值。集成空间诊断引擎与动态策略沙盘，提供可视化的保护规划科学基准，探索历史空间活化与当代城市功能融合的新路径。
+            </p>
+            <div class="tech-stack">
+              <span>AHP-GIS建模</span>
+              <span>空间诊断引擎</span>
+              <span>动态策略模拟</span>
+              <span>数据可视化</span>
+            </div>
+            <a href="https://www.geosceneonline.cn/geoscene/apps/storymaps/stories/abbe050846ba441181bcfd27ccb0fc21" target="_blank" class="btn-link">
+              查看地图故事
+            </a>
+          </div>
+          <div class="project-image">
+            <img src="/picture/6-c.png" alt="钟鼓叠春秋·轴脉跃千年" style="object-fit: cover;">
+          </div>
+        </div>
+      </section>
+
       <!-- 联系方式 -->
       <section class="card contact-card">
         <h2>📬 联系方式</h2>
@@ -269,19 +294,49 @@ h2 {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+@keyframes dance6123 {
+  to {
+    background-position: var(--width);
+  }
+}
+
 .btn-link {
+  --width: 180px;
+  --timing: 2s;
   display: inline-block;
-  background-color: #42b983;
-  color: white;
-  padding: 10px 20px;
+  width: var(--width);
+  padding: 10px 0;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1em;
+  background: rgb(64, 192, 87);
+  transition: all 0.2s;
   border-radius: 6px;
   text-decoration: none;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  text-align: center;
+  border: 0;
+  cursor: pointer;
 }
 
 .btn-link:hover {
-  background-color: #3aa876;
+  background-image: linear-gradient(
+    to right,
+    rgb(250, 82, 82),
+    rgb(250, 82, 82) 16.65%,
+    rgb(190, 75, 219) 16.65%,
+    rgb(190, 75, 219) 33.3%,
+    rgb(76, 110, 245) 33.3%,
+    rgb(76, 110, 245) 49.95%,
+    rgb(64, 192, 87) 49.95%,
+    rgb(64, 192, 87) 66.6%,
+    rgb(250, 176, 5) 66.6%,
+    rgb(250, 176, 5) 83.25%,
+    rgb(253, 126, 20) 83.25%,
+    rgb(253, 126, 20) 100%,
+    rgb(250, 82, 82) 100%
+  );
+  animation: var(--timing) linear dance6123 infinite;
+  transform: scale(1.05) translateY(-1px);
 }
 
 /* Contact */
