@@ -51,10 +51,5 @@ npm run dev
 # 服务运行在 http://localhost:3000
 ```
 
-##  部署注意事项
-- **后端上传**：必须将 `backend/src` 和 `package.json` 上传至服务器，以启用地图代理服务。
-- **数据隐私**：`.env` 文件包含敏感密钥，**请勿**提交到版本控制系统。
-- **GeoData**：地图数据文件（GeoJSON/CSV）位于前端 `public/geoData` 目录。
-
 ##  License
 MIT
