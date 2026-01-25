@@ -53,8 +53,8 @@ export default {
     onMounted(async () => {
       try {
         console.log('开始初始化天地图...');
-        
-        mapboxgl.accessToken = 'pk.eyJ1IjoieGVyb2MiLCJhIjoiY21lenIyeWk4MXRuOTJrcTVjMWIwMXc3dCJ9.nMoRkxxiCpnFxmZ1H-ScwQ';
+        //替换为自己的API
+        mapboxgl.accessToken = 'xxxxxxxxxxxxxxxxxxx';
         
         map = new mapboxgl.Map({
           container: 'map',
