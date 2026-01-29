@@ -26,7 +26,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // layer: img_w (卫星), cia_w (卫星注记), vec_w (矢量), cva_w (矢量注记)
 app.get('/api/tdt/:layer/:z/:x/:y', (req, res) => {
   const { layer, z, x, y } = req.params;
-  const TDT_KEY = '7cb53ffa2906c78ebf9b7fe4e63cdff4';
+  // 从环境变量获取天地图 Key
+  const TDT_KEY = process.env.TDT_KEY || '';
+  
+  if (!TDT_KEY) {
+    return res.status(500).json({ error: '天地图 Key 未配置' });
+  }
   
   // 简单的参数校验
   if (!/^[a-z0-9_]+$/.test(layer)) {

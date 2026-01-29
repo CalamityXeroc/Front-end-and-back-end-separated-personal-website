@@ -101,8 +101,8 @@ export default {
       loading.value = true;
       error.value = '';
 
-      // 密码验证（请在 SECURITY.md 中修改为你自己的密码）
-      const ADMIN_PASSWORD = 'bst2024';
+      // 从环境变量获取管理员密码
+      const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '';
 
       // 模拟网络延迟
       await new Promise(resolve => setTimeout(resolve, 500));
