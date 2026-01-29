@@ -11,13 +11,19 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;  // 默认端口改为 5000，以适配生产服务器
 
 // 中间件
 app.use(cors()); // 允许跨域请求
 app.use(express.json({ limit: '50mb' })); // 解析 JSON 请求体，支持大文件
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // 解析 URL 编码请求体
 app.use(morgan('dev')); // 请求日志
+
+// --- 调试中间件：打印所有请求路径，用于排查 Nginx 代理错误 ---
+app.use((req, res, next) => {
+  console.log(`🔍 [收到请求] ${req.method} ${req.url}`);
+  next();
+});
 
 // 静态文件服务（上传的图片）
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
