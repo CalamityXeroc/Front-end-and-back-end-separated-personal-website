@@ -24,6 +24,15 @@
       
       <router-link to="/blog" class="back-link">← 返回博客列表</router-link>
     </div>
+    
+    <!-- 图片放大模态框 -->
+    <div v-if="showImageModal" class="image-modal" @click="closeImageModal">
+      <div class="image-modal-content">
+        <img :src="modalImageSrc" :alt="modalImageAlt" class="modal-image" @click.stop />
+        <button class="close-btn" @click="closeImageModal">×</button>
+        <div class="image-info" v-if="modalImageAlt">{{ modalImageAlt }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -66,6 +75,9 @@ export default {
     const loading = ref(true);
     const error = ref(null);
     const contentRef = ref(null);
+    const showImageModal = ref(false);
+    const modalImageSrc = ref('');
+    const modalImageAlt = ref('');
 
     const fetchPost = async () => {
       try {
@@ -98,6 +110,7 @@ export default {
           
           // Add extra features
           addCopyButtons();
+          addImageZoom();
         }
       }
     });
@@ -200,9 +213,45 @@ export default {
       document.body.removeChild(textArea);
     };
 
+    const addImageZoom = () => {
+      if (!contentRef.value) return;
+      const images = contentRef.value.querySelectorAll('img');
+      
+      images.forEach(img => {
+        // 避免重复添加事件
+        if (img.hasAttribute('data-zoom-added')) return;
+        
+        img.style.cursor = 'zoom-in';
+        img.setAttribute('data-zoom-added', 'true');
+        
+        // 双击事件
+        img.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          modalImageSrc.value = img.src;
+          modalImageAlt.value = img.alt || '';
+          showImageModal.value = true;
+          
+          // 防止页面滚动
+          document.body.style.overflow = 'hidden';
+        });
+        
+        // 添加hover提示
+        img.title = img.title || '双击可放大查看';
+      });
+    };
+    
+    const closeImageModal = () => {
+      showImageModal.value = false;
+      modalImageSrc.value = '';
+      modalImageAlt.value = '';
+      document.body.style.overflow = 'auto';
+    };
+
     onMounted(async () => {
       await fetchPost();
-      // addCopyButtons carries out in watch
+      // addCopyButtons and addImageZoom carry out in watch
     });
 
     return {
@@ -210,6 +259,10 @@ export default {
       loading,
       error,
       contentRef, // Export Ref
+      showImageModal,
+      modalImageSrc,
+      modalImageAlt,
+      closeImageModal,
       formatDate
     };
   }
@@ -389,6 +442,13 @@ h1 {
   height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: zoom-in;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.content :deep(img:hover) {
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .content :deep(a) {
@@ -446,6 +506,91 @@ h1 {
 
 .back-link:hover {
   text-decoration: underline;
+}
+
+/* 图片放大模态框样式 */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: zoom-out;
+  animation: fadeIn 0.3s ease;
+}
+
+.image-modal-content {
+  position: relative;
+  max-width: 95%;
+  max-height: 95%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 85vh;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  animation: scaleIn 0.3s ease;
+}
+
+.close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 40px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.image-info {
+  color: white;
+  text-align: center;
+  margin-top: 15px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  font-size: 0.9em;
+  max-width: 90%;
+  word-wrap: break-word;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 排版样式 */

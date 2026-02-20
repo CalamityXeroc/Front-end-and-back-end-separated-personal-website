@@ -1,3 +1,6 @@
+/* 导入设计系统 Design System */
+@import './design-system.css';
+
 * {
     margin: 0;
     padding: 0;
@@ -7,9 +10,9 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    font-family: var(--font-family-base);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     overflow-x: hidden;
     width: 100%;
 }
@@ -19,56 +22,88 @@ html {
     width: 100%;
 }
 
-header {
-    background: #35424a;
-    color: #ffffff;
-    padding: 10px 0;
-    text-align: center;
-}
-
-nav {
-    margin: 10px 0;
-}
-
-nav a {
-    color: #ffffff;
-    text-decoration: none;
-    margin: 0 15px;
-}
-
-nav a:hover {
-    text-decoration: underline;
-}
-
-footer {
-    background: #35424a;
-    color: #ffffff;
-    text-align: center;
-    padding: 10px 0;
-    position: relative;
-    bottom: 0;
+html {
+    overflow-x: hidden;
     width: 100%;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+/* ========== 页脚样式 ========== */
+footer {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: var(--spacing-3xl) var(--spacing-lg);
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--spacing-5xl);
 }
 
+footer p {
+    margin: var(--spacing-sm) 0;
+    font-size: var(--font-size-sm);
+}
+
+footer a {
+    color: var(--color-primary);
+    transition: color var(--transition-base);
+}
+
+footer a:hover {
+    color: var(--color-primary-light);
+}
+
+.beian-police {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.beian-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    opacity: 0.7;
+}
+
+/* ========== 通用卡片样式 ========== */
 .blog-card, .photo-card {
-    background: #ffffff;
-    border: 1px solid #dddddd;
-    border-radius: 5px;
-    margin: 15px 0;
-    padding: 15px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-xl);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all var(--transition-base);
+    backdrop-filter: blur(10px);
+}
+
+.blog-card:hover, .photo-card:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: 
+        0 8px 24px rgba(0, 217, 255, 0.1),
+        inset 0 0 20px rgba(0, 217, 255, 0.05);
+    transform: translateY(-4px);
 }
 
 .blog-card h3, .photo-card h3 {
-    margin: 0 0 10px;
+    margin: 0 0 var(--spacing-md);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-2xl);
 }
 
 .blog-card p, .photo-card p {
     margin: 0;
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-relaxed);
+}
+
+/* ========== 响应式调整 ========== */
+@media (max-width: 768px) {
+    .container {
+        padding: var(--spacing-md);
+    }
 }

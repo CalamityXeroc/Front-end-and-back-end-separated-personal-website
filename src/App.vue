@@ -25,6 +25,7 @@ export default {
 
 <style>
 @import './assets/styles/main.css';
+@import './assets/styles/migration-guide.css';
 
 #app {
   width: 100%;
@@ -33,38 +34,43 @@ export default {
 }
 
 .site-footer {
-  background-color: #333;
-  color: #ecf0f1;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
   text-align: center;
-  padding: 20px;
+  padding: var(--spacing-2xl);
   margin-top: 0;
   font-size: 0.9rem;
   width: 100%;
+  border-top: 1px solid var(--color-border);
 }
 
 .site-footer p {
-  margin: 5px 0;
+  margin: var(--spacing-xs) 0;
 }
 
 .site-footer a {
-  color: #ecf0f1;
+  color: var(--color-primary);
   text-decoration: none;
+  transition: color var(--transition-base);
 }
 
 .site-footer a:hover {
-  opacity: 0.8;
+  color: var(--color-primary-light);
+  text-decoration: underline;
 }
 
 .beian-police {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
 }
 
 .beian-icon {
   width: 20px;
   height: 20px;
   vertical-align: middle;
+  opacity: 0.7;
 }
 </style>

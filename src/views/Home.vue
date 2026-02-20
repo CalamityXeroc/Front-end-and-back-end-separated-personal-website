@@ -32,17 +32,6 @@
           <span class="title-icon">✨</span>
         </h2>
         <p class="section-subtitle">分享学习与生活的点点滴滴</p>
-        
-        <!-- 日期组件：右上角 -->
-        <div class="date-widget">
-          <iframe
-            src="https://www.widgets.link/#/date-number-02?nc=37352F&bbc=ffffff&br=5&bg=&_b=true"
-            title="日期组件"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin"
-          ></iframe>
-        </div>
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -178,14 +167,11 @@ export default {
 }
 
 .typing-effect {
+  color: #ffffff;  
   font-size: 3.5rem;
   margin-bottom: 1.5rem;
   font-weight: 700;
   text-shadow: 0 4px 8px rgba(0,0,0,0.5);
-  overflow: hidden;
-  white-space: nowrap;
-  border-right: 4px solid white;
-  animation: typing 2s steps(30, end), blink-caret 0.75s step-end infinite;
   max-width: 100%;
   display: inline-block;
 }
@@ -201,10 +187,10 @@ export default {
 }
 
 .fade-in-up {
+  color: #ffffff;  
   font-size: 1.5rem;
   margin-bottom: 2rem;
-  opacity: 0;
-  animation: fadeInUp 1s ease-out 2s forwards; /* 延迟2秒等待打字效果完成 */
+  opacity: 1;
 }
 
 .scroll-indicator {
@@ -338,18 +324,6 @@ export default {
   margin-bottom: 60px;
   position: relative;
   z-index: 1;
-}
-
-/* 日期组件样式 */
-.date-widget {
-  position: absolute;
-  top: -85px;
-  left: -50px;
-  width: 200px;
-  height: 200px;
-  border-radius: 8px;
-  overflow: hidden;
-
 }
 
 .date-widget iframe {

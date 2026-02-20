@@ -137,6 +137,7 @@ export default {
   overflow-y: auto;
   width: 100%;
   max-width: 100vw;
+  background: #000;
 }
 
 .bg-video {
@@ -146,7 +147,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -1;
+  z-index: 0;
 }
 
 .about-container {
@@ -162,6 +163,10 @@ export default {
 .profile-header {
   text-align: center;
   margin-bottom: 50px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 30px;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
 }
 
 h1 {
@@ -204,11 +209,12 @@ h1 {
 }
 
 .card {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   padding: 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease;
+  backdrop-filter: blur(5px);
 }
 
 .card:hover {

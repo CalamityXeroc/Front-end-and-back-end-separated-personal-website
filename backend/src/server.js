@@ -11,7 +11,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;  // 默认端口改为 5000，以适配生产服务器
+const PORT = process.env.PORT || 5000;  // 默认端口改为 5000，与测试环境一致
 
 // 中间件
 app.use(cors()); // 允许跨域请求
@@ -21,6 +21,8 @@ app.use(morgan('dev')); // 请求日志
 
 // --- 调试中间件：打印所有请求路径，用于排查 Nginx 代理错误 ---
 app.use((req, res, next) => {
+  // 忽略 Vite 的心跳请求日志
+  if (req.url === '/__vite_ping') return next();
   console.log(`🔍 [收到请求] ${req.method} ${req.url}`);
   next();
 });
@@ -121,10 +123,12 @@ const startServer = async () => {
     // 测试数据库连接
     await testConnection();
     
-    app.listen(PORT, () => {
-      console.log(`\n🚀 服务器运行在 http://localhost:${PORT}`);
-      console.log(`📝 API 文档: http://localhost:${PORT}/`);
-      console.log(`📦 环境: ${process.env.NODE_ENV || 'development'}\n`);
+    // 强制监听 0.0.0.0 以允许外部访问（容器/服务器环境必要）
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`\n🚀 服务器成功启动！`);
+      console.log(`📡 监听地址: http://0.0.0.0:${PORT}`);
+      console.log(`📝 本地访问: http://localhost:${PORT}`);
+      console.log(`📦 当前环境: ${process.env.NODE_ENV || 'development'}\n`);
     });
   } catch (error) {
     console.error('❌ 服务器启动失败:', error);
