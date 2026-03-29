@@ -10,7 +10,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;  // 默认端口改为 5000，与测试环境一致
+const PORT = process.env.PORT || 3001;  // 默认端口改为 3001，与生产环境配置一致
 
 // 中间件
 app.use(cors()); // 允许跨域请求
