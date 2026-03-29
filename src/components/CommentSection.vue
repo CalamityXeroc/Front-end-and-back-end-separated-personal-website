@@ -2,17 +2,48 @@
   <div class="comment-section">
     <h3 class="section-title"> 留言区</h3>
 
-    <div class="comments-list" v-if="comments.length > 0">
-      <div v-for="comment in comments" :key="comment.id" class="comment-item">
+    <div class="comments-list" v-if="flattenedComments.length > 0">
+      <div
+        v-for="comment in flattenedComments"
+        :key="`comment-${comment.id}`"
+        class="comment-item"
+        :style="{ '--comment-depth': Math.min(comment.depth, 6) }"
+      >
         <div class="comment-avatar">
-          {{ comment.nickname.charAt(0).toUpperCase() }}
+          {{ getAvatarText(comment.nickname) }}
         </div>
         <div class="comment-content">
           <div class="comment-header">
-            <span class="nickname">{{ comment.nickname }}</span>
+            <span class="nickname">{{ safeNickname(comment.nickname) }}</span>
             <span class="date">{{ formatDate(comment.createdAt) }}</span>
           </div>
-          <p class="comment-text">{{ comment.content }}</p>
+          <p class="comment-text">{{ safeContent(comment.content) }}</p>
+
+          <div class="comment-actions">
+            <button class="action-btn" @click="openReply(comment)">回复</button>
+            <button
+              class="action-btn like-btn"
+              :class="{ liked: !!comment.likedByCurrentVisitor }"
+              :disabled="likingIds.includes(comment.id)"
+              @click="likeComment(comment)"
+            >
+              👍 {{ Number(comment.likesCount || 0) }}
+            </button>
+          </div>
+
+          <div v-if="replyingToId === comment.id" class="reply-form">
+            <textarea
+              v-model="replyContent"
+              placeholder="写下你的回复..."
+              rows="3"
+            ></textarea>
+            <div class="reply-actions">
+              <button class="btn-subtle" @click="cancelReply">取消</button>
+              <button class="btn-submit" :disabled="submitting || !replyContent.trim()" @click="submitReply(comment)">
+                {{ submitting ? '发送中...' : '发布回复' }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -54,7 +85,7 @@
         </div>
 
         <button type="submit" class="btn-submit" :disabled="submitting">
-          {{ submitting ? '发送中...' : ' 发送留言' }}
+          {{ submitting ? '发送中...' : '发送留言' }}
         </button>
       </form>
     </div>
@@ -62,7 +93,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { commentApi } from '../api/index';
 
 export default {
@@ -74,23 +105,122 @@ export default {
     }
   },
   setup(props) {
-    const comments = ref([]);
+    const commentsTree = ref([]);
     const submitting = ref(false);
+    const replyingToId = ref(null);
+    const replyContent = ref('');
+    const likingIds = ref([]);
+    const visitorKey = ref('');
+
     const form = ref({
       nickname: '',
       email: '',
       content: ''
     });
 
+    const toSafeComment = (raw = {}) => ({
+      id: Number(raw.id),
+      blogId: Number(raw.blogId || props.blogId),
+      nickname: safeNickname(raw.nickname),
+      email: raw.email || '',
+      content: safeContent(raw.content),
+      parentId: raw.parentId === undefined || raw.parentId === '' ? null : Number(raw.parentId),
+      likesCount: Number.isFinite(Number(raw.likesCount)) ? Number(raw.likesCount) : 0,
+      createdAt: raw.createdAt || raw.updatedAt || new Date().toISOString(),
+      likedByCurrentVisitor: !!raw.likedByCurrentVisitor,
+      children: Array.isArray(raw.children) ? raw.children.map(toSafeComment) : []
+    });
+
+    const buildTreeFromFlat = (list) => {
+      const map = new Map();
+      const roots = [];
+      list.forEach((item) => {
+        const comment = toSafeComment(item);
+        comment.children = [];
+        map.set(comment.id, comment);
+      });
+
+      map.forEach((comment) => {
+        if (comment.parentId && map.has(comment.parentId)) {
+          map.get(comment.parentId).children.push(comment);
+        } else {
+          roots.push(comment);
+        }
+      });
+
+      return roots;
+    };
+
+    const flattenTree = (nodes, depth = 0, acc = []) => {
+      nodes.forEach((node) => {
+        acc.push({ ...node, depth });
+        if (Array.isArray(node.children) && node.children.length > 0) {
+          flattenTree(node.children, depth + 1, acc);
+        }
+      });
+      return acc;
+    };
+
+    const flattenedComments = computed(() => flattenTree(commentsTree.value));
+
+    const safeNickname = (nickname) => {
+      const value = typeof nickname === 'string' ? nickname.trim() : '';
+      return value || '访客';
+    };
+
+    const safeContent = (content) => {
+      const value = typeof content === 'string' ? content.trim() : '';
+      return value || '[无内容]';
+    };
+
+    const getAvatarText = (nickname) => safeNickname(nickname).charAt(0).toUpperCase();
+
+    const ensureVisitorKey = () => {
+      const keyName = 'comment_visitor_key';
+      const fromStorage = localStorage.getItem(keyName);
+      if (fromStorage) {
+        visitorKey.value = fromStorage;
+        return;
+      }
+
+      const seed = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+      const generated = `vk_${seed}`;
+      localStorage.setItem(keyName, generated);
+      visitorKey.value = generated;
+    };
+
     const fetchComments = async () => {
       try {
-        const response = await commentApi.getByBlogId(props.blogId);
+        const response = await commentApi.getByBlogId(props.blogId, {
+          tree: true,
+          visitorKey: visitorKey.value
+        });
+
         if (response.success) {
-          comments.value = response.data;
+          if (Array.isArray(response.data) && response.data.some((item) => Array.isArray(item.children))) {
+            commentsTree.value = response.data.map(toSafeComment);
+          } else {
+            commentsTree.value = buildTreeFromFlat(Array.isArray(response.data) ? response.data : []);
+          }
         }
       } catch (err) {
         console.error('获取留言失败:', err);
+        commentsTree.value = [];
       }
+    };
+
+    const resetReplyState = () => {
+      replyingToId.value = null;
+      replyContent.value = '';
+    };
+
+    const openReply = (comment) => {
+      replyingToId.value = comment.id;
+      replyContent.value = '';
+    };
+
+    const cancelReply = () => {
+      resetReplyState();
     };
 
     const submitComment = async () => {
@@ -98,23 +228,79 @@ export default {
       try {
         const response = await commentApi.create({
           blogId: props.blogId,
+          parentId: null,
           ...form.value
         });
 
         if (response.success) {
-          alert(' 留言成功！');
+          alert('留言成功！');
           form.value.content = '';
           await fetchComments();
         }
       } catch (err) {
-        alert(' 留言失败：' + (err.response?.data?.message || err.message));
+        alert('留言失败：' + (err.response?.data?.message || err.message));
       } finally {
         submitting.value = false;
       }
     };
 
+    const submitReply = async (parentComment) => {
+      if (!replyContent.value.trim()) return;
+
+      if (!form.value.nickname.trim() || !form.value.email.trim()) {
+        alert('请先填写昵称和邮箱，再发布回复。');
+        return;
+      }
+
+      submitting.value = true;
+      try {
+        const response = await commentApi.create({
+          blogId: props.blogId,
+          parentId: parentComment.id,
+          nickname: form.value.nickname,
+          email: form.value.email,
+          content: replyContent.value
+        });
+
+        if (response.success) {
+          resetReplyState();
+          await fetchComments();
+        }
+      } catch (err) {
+        alert('回复失败：' + (err.response?.data?.message || err.message));
+      } finally {
+        submitting.value = false;
+      }
+    };
+
+    const likeComment = async (comment) => {
+      if (likingIds.value.includes(comment.id) || comment.likedByCurrentVisitor) {
+        return;
+      }
+
+      likingIds.value = [...likingIds.value, comment.id];
+
+      try {
+        const response = await commentApi.like(comment.id, visitorKey.value);
+        if (!response.success) {
+          throw new Error(response.message || '点赞失败');
+        }
+        await fetchComments();
+      } catch (err) {
+        alert('点赞失败：' + (err.response?.data?.message || err.message));
+      } finally {
+        likingIds.value = likingIds.value.filter((id) => id !== comment.id);
+      }
+    };
+
     const formatDate = (dateString) => {
+      if (!dateString) {
+        return '日期未知';
+      }
       const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        return '日期未知';
+      }
       return date.toLocaleString('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -125,15 +311,26 @@ export default {
     };
 
     onMounted(() => {
+      ensureVisitorKey();
       fetchComments();
     });
 
     return {
-      comments,
+      flattenedComments,
       form,
       submitting,
+      replyingToId,
+      replyContent,
+      likingIds,
       submitComment,
-      formatDate
+      submitReply,
+      openReply,
+      cancelReply,
+      likeComment,
+      formatDate,
+      safeNickname,
+      safeContent,
+      getAvatarText
     };
   }
 };
@@ -164,6 +361,32 @@ export default {
   margin-bottom: 24px;
   padding-bottom: 24px;
   border-bottom: 1px solid #edf3ed;
+  margin-left: calc(var(--comment-depth) * 16px);
+  position: relative;
+}
+
+.comment-item::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 6px;
+  width: 2px;
+  height: calc(100% - 12px);
+  background: rgba(107, 156, 47, 0.15);
+  display: none;
+}
+
+.comment-item[style*='--comment-depth: 0']::before {
+  display: none;
+}
+
+.comment-item[style*='--comment-depth: 1']::before,
+.comment-item[style*='--comment-depth: 2']::before,
+.comment-item[style*='--comment-depth: 3']::before,
+.comment-item[style*='--comment-depth: 4']::before,
+.comment-item[style*='--comment-depth: 5']::before,
+.comment-item[style*='--comment-depth: 6']::before {
+  display: block;
 }
 
 .comment-avatar {
@@ -205,6 +428,63 @@ export default {
   line-height: var(--line-height-relaxed);
   margin: 0;
   white-space: pre-wrap;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.action-btn {
+  border: 1px solid var(--color-border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.like-btn.liked {
+  border-color: rgba(226, 58, 98, 0.35);
+  background: rgba(226, 58, 98, 0.08);
+  color: #b62249;
+}
+
+.reply-form {
+  margin-top: 12px;
+  background: #f8fbf7;
+  border: 1px solid #e3ede1;
+  border-radius: var(--radius-md);
+  padding: 10px;
+}
+
+.reply-form textarea {
+  width: 100%;
+  border: 1px solid #d8e6d8;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-family: inherit;
+}
+
+.reply-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-subtle {
+  border: 1px solid var(--color-border);
+  background: #fff;
+  border-radius: var(--radius-full);
+  padding: 8px 14px;
+  cursor: pointer;
 }
 
 .empty-comments {
@@ -286,6 +566,10 @@ export default {
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .comment-item {
+    margin-left: calc(var(--comment-depth) * 10px);
   }
 }
 </style>

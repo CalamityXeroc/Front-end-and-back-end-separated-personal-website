@@ -29,6 +29,18 @@ const Comment = sequelize.define('Comment', {
     type: DataTypes.TEXT,
     allowNull: false,
     comment: '留言内容'
+  },
+  parentId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+    comment: '父级留言ID，空值表示一级留言'
+  },
+  likesCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    comment: '点赞数'
   }
 }, {
   timestamps: true, // 自动管理 createdAt 和 updatedAt

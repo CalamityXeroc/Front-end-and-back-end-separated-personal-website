@@ -8,6 +8,9 @@ router.get('/:blogId', commentController.getCommentsByBlogId);
 // 发布新留言
 router.post('/', commentController.createComment);
 
+// 点赞留言
+router.post('/:id/like', commentController.likeComment);
+
 // 删除留言
 router.delete('/:id', commentController.deleteComment);
 

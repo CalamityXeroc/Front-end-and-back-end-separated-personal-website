@@ -2,6 +2,7 @@ const { sequelize } = require('./database');
 const Blog = require('../models/Blog');
 const MapMarker = require('../models/MapMarker');
 const Comment = require('../models/Comment');
+const CommentLike = require('../models/CommentLike');
 
 async function initDatabase() {
   try {
@@ -17,9 +18,13 @@ async function initDatabase() {
     
     // 检查是否有数据
     const blogCount = await Blog.count();
+    const commentCount = await Comment.count();
+    const likeCount = await CommentLike.count();
     
     console.log(`\n📊 当前数据统计:`);
     console.log(`   博客: ${blogCount} 篇`);
+    console.log(`   评论: ${commentCount} 条`);
+    console.log(`   点赞: ${likeCount} 条`);
     
     // 如果没有数据，插入示例数据
     if (blogCount === 0) {

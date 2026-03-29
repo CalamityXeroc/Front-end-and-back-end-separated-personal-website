@@ -79,10 +79,23 @@ export const uploadApi = {
 // 留言相关API
 export const commentApi = {
   // 获取某篇博客的留言
-  getByBlogId: (blogId) => api.get(`/comments/${blogId}`),
+  getByBlogId: (blogId, options = {}) => {
+    const params = new URLSearchParams();
+    if (options.tree) {
+      params.set('tree', 'true');
+    }
+    if (options.visitorKey) {
+      params.set('visitorKey', options.visitorKey);
+    }
+    const query = params.toString();
+    return api.get(`/comments/${blogId}${query ? `?${query}` : ''}`);
+  },
   
   // 发布新留言
   create: (data) => api.post('/comments', data),
+
+  // 点赞留言
+  like: (id, visitorKey) => api.post(`/comments/${id}/like`, { visitorKey }),
   
   // 删除留言（管理员功能）
   delete: (id) => api.delete(`/comments/${id}`)
