@@ -3,6 +3,7 @@ node_modules/
 */node_modules/
 backend/node_modules/
 
+
 # Build Output
 dist/
 dist-ssr/
@@ -10,6 +11,7 @@ build/
 *.zip
 *.rar
 *.tar.gz
+.agents
 
 # Public folder (user uploads and media)
 public/

@@ -29,7 +29,7 @@ export default {
 
 #app {
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   overflow-x: hidden;
 }
 

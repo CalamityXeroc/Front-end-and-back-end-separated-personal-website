@@ -1210,7 +1210,7 @@ export default {
 .maps {
   padding: 0;
   margin: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   position: relative;
   overflow: hidden;

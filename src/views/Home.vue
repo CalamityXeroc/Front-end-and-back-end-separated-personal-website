@@ -132,7 +132,7 @@ export default {
   overflow-x: hidden;
   background: transparent;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
 }
 
 .hero-section {
@@ -542,12 +542,14 @@ export default {
   
   /* 导航按钮 - 调整位置避免遮挡标题 */
   .home-nav {
+    position: relative;
+    top: auto;
     padding-top: 10px;
-    top: 70vh;
     padding-bottom: 15px;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
+    pointer-events: auto;
   }
   
   .nav-item {
@@ -617,7 +619,8 @@ export default {
   }
   
   .home-nav {
-    top: 65vh;
+    position: relative;
+    top: auto;
     justify-content: center;
   }
   

@@ -30,13 +30,31 @@ export default {
 
 <style scoped>
 .blog {
-  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 24px 56px;
+}
+
+.blog h1 {
+  margin-bottom: var(--spacing-2xl);
+  color: var(--color-text-primary);
 }
 
 .blog-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 25px;
-  padding: 10px;
+  gap: var(--spacing-2xl);
+  padding: 0;
+}
+
+@media (max-width: 767px) {
+  .blog {
+    padding: 20px 12px 36px;
+  }
+
+  .blog-list {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
 }
 </style>

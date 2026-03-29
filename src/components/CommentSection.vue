@@ -1,8 +1,7 @@
-<template>
+﻿<template>
   <div class="comment-section">
-    <h3 class="section-title">💬 留言区</h3>
+    <h3 class="section-title"> 留言区</h3>
 
-    <!-- 留言列表 -->
     <div class="comments-list" v-if="comments.length > 0">
       <div v-for="comment in comments" :key="comment.id" class="comment-item">
         <div class="comment-avatar">
@@ -17,43 +16,45 @@
         </div>
       </div>
     </div>
+
     <div v-else class="empty-comments">
-      <p>还没有留言，快来抢沙发吧！🛋️</p>
+      <p>还没有留言，快来抢沙发吧！</p>
     </div>
 
-    <!-- 留言表单 -->
     <div class="comment-form">
       <h4>发表留言</h4>
       <form @submit.prevent="submitComment">
         <div class="form-row">
           <div class="form-group">
-            <input 
-              v-model="form.nickname" 
-              type="text" 
-              placeholder="昵称 *" 
-              required 
+            <input
+              v-model="form.nickname"
+              type="text"
+              placeholder="昵称 *"
+              required
               maxlength="20"
             />
           </div>
           <div class="form-group">
-            <input 
-              v-model="form.email" 
-              type="email" 
-              placeholder="邮箱 * (保密)" 
-              required 
+            <input
+              v-model="form.email"
+              type="email"
+              placeholder="邮箱 * (保密)"
+              required
             />
           </div>
         </div>
+
         <div class="form-group">
-          <textarea 
-            v-model="form.content" 
-            placeholder="写下你的想法..." 
-            required 
+          <textarea
+            v-model="form.content"
+            placeholder="写下你的想法..."
+            required
             rows="4"
           ></textarea>
         </div>
+
         <button type="submit" class="btn-submit" :disabled="submitting">
-          {{ submitting ? '发送中...' : '🚀 发送留言' }}
+          {{ submitting ? '发送中...' : ' 发送留言' }}
         </button>
       </form>
     </div>
@@ -99,16 +100,14 @@ export default {
           blogId: props.blogId,
           ...form.value
         });
-        
+
         if (response.success) {
-          alert('✅ 留言成功！');
-          // 清空表单
+          alert(' 留言成功！');
           form.value.content = '';
-          // 重新获取留言列表
           await fetchComments();
         }
       } catch (err) {
-        alert('❌ 留言失败：' + (err.response?.data?.message || err.message));
+        alert(' 留言失败：' + (err.response?.data?.message || err.message));
       } finally {
         submitting.value = false;
       }
@@ -142,21 +141,21 @@ export default {
 
 <style scoped>
 .comment-section {
-  margin-top: 60px;
-  padding-top: 40px;
-  border-top: 1px solid #eee;
+  margin-top: var(--spacing-5xl);
+  padding-top: var(--spacing-4xl);
+  border-top: 1px solid var(--color-border);
 }
 
 .section-title {
-  font-size: 1.5rem;
-  margin-bottom: 30px;
-  color: #333;
-  border-left: 4px solid #667eea;
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-3xl);
+  color: var(--color-text-primary);
+  border-left: 4px solid var(--color-primary);
   padding-left: 12px;
 }
 
 .comments-list {
-  margin-bottom: 40px;
+  margin-bottom: var(--spacing-4xl);
 }
 
 .comment-item {
@@ -164,13 +163,13 @@ export default {
   gap: 16px;
   margin-bottom: 24px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid #edf3ed;
 }
 
 .comment-avatar {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
   color: white;
   border-radius: 50%;
   display: flex;
@@ -193,39 +192,41 @@ export default {
 
 .nickname {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .date {
-  font-size: 0.85rem;
-  color: #999;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
 .comment-text {
-  color: #555;
-  line-height: 1.6;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
   margin: 0;
   white-space: pre-wrap;
 }
 
 .empty-comments {
   text-align: center;
-  padding: 40px;
-  color: #999;
-  background: #f9f9f9;
-  border-radius: 8px;
-  margin-bottom: 40px;
+  padding: var(--spacing-4xl);
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-4xl);
 }
 
 .comment-form {
-  background: #f8f9fa;
-  padding: 30px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-3xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft-sm);
 }
 
 .comment-form h4 {
-  margin: 0 0 20px 0;
-  color: #333;
+  margin: 0 0 var(--spacing-xl) 0;
+  color: var(--color-text-primary);
 }
 
 .form-row {
@@ -239,8 +240,8 @@ export default {
 .form-group textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid #d8e6d8;
+  border-radius: var(--radius-md);
   font-family: inherit;
   transition: all 0.3s ease;
 }
@@ -248,16 +249,16 @@ export default {
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(107, 156, 47, 0.12);
 }
 
 .btn-submit {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
   color: white;
   border: none;
   padding: 12px 32px;
-  border-radius: 50px;
+  border-radius: var(--radius-full);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -265,7 +266,7 @@ export default {
 
 .btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-soft-md);
 }
 
 .btn-submit:disabled {
@@ -274,6 +275,15 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .comment-header {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .comment-form {
+    padding: var(--spacing-lg);
+  }
+
   .form-row {
     grid-template-columns: 1fr;
   }

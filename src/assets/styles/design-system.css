@@ -5,6 +5,12 @@
  */
 
 :root {
+  /* ========== 断点系统 ========== */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
   /* ========== 色彩系统 ========== */
   
   /* 主调色板 */
@@ -91,6 +97,7 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 20px;
+  --radius-3xl: 28px;
   --radius-full: 999px;
   
   /* ========== 阴影系统 ========== */
@@ -117,6 +124,7 @@
   --z-hide: -1;
   --z-base: 1;
   --z-dropdown: 100;
+  --z-mobile-menu: 240;
   --z-sticky: 200;
   --z-modal-bg: 300;
   --z-modal: 400;
@@ -236,5 +244,21 @@ a:hover {
 
 .soft-shadow-hover:hover {
   box-shadow: var(--shadow-soft-xl);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --font-size-6xl: 34px;
+    --font-size-5xl: 30px;
+    --font-size-4xl: 26px;
+    --font-size-3xl: 22px;
+    --font-size-2xl: 20px;
+
+    --spacing-3xl: 28px;
+    --spacing-4xl: 34px;
+    --spacing-5xl: 40px;
+    --spacing-6xl: 48px;
+    --spacing-7xl: 56px;
+  }
 }
 

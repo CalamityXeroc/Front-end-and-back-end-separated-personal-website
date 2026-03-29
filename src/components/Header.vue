@@ -1,5 +1,5 @@
 <template>
-  <header class="header">
+  <header class="header" :class="{ 'header-mobile-open': mobileMenuOpen }">
     <div class="header-container">
       <!-- Logo/Brand -->
       <router-link to="/" class="header-logo">
@@ -22,18 +22,25 @@
       </nav>
       
       <!-- Mobile Menu Toggle -->
-      <button class="menu-toggle" @click="toggleMobileMenu" aria-label="Toggle menu">
+      <button
+        class="menu-toggle"
+        @click="toggleMobileMenu"
+        :aria-expanded="mobileMenuOpen"
+        aria-controls="mobile-nav"
+        aria-label="切换导航菜单"
+      >
         <span class="hamburger"></span>
       </button>
     </div>
     
     <!-- Mobile Menu Dropdown -->
-    <nav v-if="mobileMenuOpen" class="mobile-menu">
+    <nav v-if="mobileMenuOpen" id="mobile-nav" class="mobile-menu">
       <router-link 
         v-for="item in navItems" 
         :key="item.path"
         :to="item.path"
         class="mobile-menu-link"
+        @click="closeMobileMenu"
       >
         {{ item.label }}
       </router-link>
@@ -42,7 +49,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 
 export default {
@@ -56,16 +63,41 @@ export default {
       { path: '/maps', label: '地图', icon: '🗺️' },
       { path: '/about', label: '关于', icon: '👨‍💻' }
     ];
+
+    const setBodyLock = (locked) => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.toggle('menu-open', locked);
+      }
+    };
     
     const isActive = (path) => route.path === path;
+
+    const closeMobileMenu = () => {
+      mobileMenuOpen.value = false;
+      setBodyLock(false);
+    };
+
     const toggleMobileMenu = () => {
       mobileMenuOpen.value = !mobileMenuOpen.value;
+      setBodyLock(mobileMenuOpen.value);
     };
+
+    watch(
+      () => route.path,
+      () => {
+        closeMobileMenu();
+      }
+    );
+
+    onBeforeUnmount(() => {
+      setBodyLock(false);
+    });
     
     return {
       navItems,
       isActive,
       toggleMobileMenu,
+      closeMobileMenu,
       mobileMenuOpen
     };
   }
@@ -78,8 +110,8 @@ export default {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  background: rgba(248, 254, 251, 0.9);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
   box-shadow: 0 2px 8px rgba(45, 62, 45, 0.08);
 }
@@ -87,7 +119,7 @@ export default {
 .header-container {
   max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-xl);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -126,7 +158,7 @@ export default {
 .header-nav {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
 }
 
 .nav-link {
@@ -134,22 +166,25 @@ export default {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
+  border-radius: var(--radius-full);
+  color: #000;
   text-decoration: none;
   font-weight: var(--font-weight-medium);
   transition: all var(--transition-base);
   position: relative;
+  border: 1px solid transparent;
 }
 
 .nav-link:hover {
-  color: var(--color-primary);
-  background: rgba(107, 156, 47, 0.05);
+  color: #000;
+  background: rgba(107, 156, 47, 0.08);
+  border-color: rgba(107, 156, 47, 0.2);
 }
 
 .nav-link-active {
-  color: var(--color-primary);
-  background: rgba(107, 156, 47, 0.08);
+  color: #000;
+  background: rgba(107, 156, 47, 0.14);
+  border-color: rgba(107, 156, 47, 0.35);
 }
 
 .nav-link-active::after {
@@ -160,7 +195,7 @@ export default {
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  background: var(--color-primary);
+  background: #000;
   border-radius: 50%;
   box-shadow: 0 0 8px rgba(107, 156, 47, 0.4);
 }
@@ -183,6 +218,8 @@ export default {
   color: var(--color-text-primary);
   cursor: pointer;
   padding: var(--spacing-sm);
+  min-width: 44px;
+  min-height: 44px;
   
   @media (max-width: 768px) {
     display: flex;
@@ -230,6 +267,16 @@ export default {
   gap: var(--spacing-sm);
   padding: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: var(--z-mobile-menu);
+  background: rgba(248, 254, 251, 0.98);
+  backdrop-filter: blur(10px);
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+  box-shadow: var(--shadow-soft-md);
   
   @media (max-width: 768px) {
     display: flex;
@@ -239,16 +286,25 @@ export default {
 .mobile-menu-link {
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
   transition: all var(--transition-base);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .mobile-menu-link:hover {
-  background: rgba(0, 217, 255, 0.1);
-  color: var(--color-primary);
+  background: rgba(107, 156, 47, 0.1);
+  color: #000;
   padding-left: calc(var(--spacing-lg) + 8px);
+}
+
+.mobile-menu-link.router-link-active {
+  background: rgba(107, 156, 47, 0.14);
+  color: #000;
+  border: 1px solid rgba(107, 156, 47, 0.28);
 }
 
 /* ========== 动画 ========== */
@@ -265,6 +321,24 @@ export default {
 @media (max-width: 768px) {
   .header-container {
     padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .mobile-menu {
+    position: static;
+    left: auto;
+    right: auto;
+    top: auto;
+    border: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm);
+    gap: 6px;
+    max-height: min(62vh, 420px);
+    margin: 0 var(--spacing-lg) var(--spacing-sm);
+  }
+
+  .mobile-menu-link {
+    padding: 12px 14px;
   }
   
   .header-nav {

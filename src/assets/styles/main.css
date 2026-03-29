@@ -17,9 +17,9 @@ body {
     width: 100%;
 }
 
-html {
-    overflow-x: hidden;
-    width: 100%;
+body.menu-open {
+    overflow: hidden;
+    touch-action: none;
 }
 
 html {
@@ -29,7 +29,7 @@ html {
 
 /* ========== 页脚样式 ========== */
 footer {
-    background: var(--color-bg-secondary);
+    background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
     color: var(--color-text-secondary);
     text-align: center;
     padding: var(--spacing-3xl) var(--spacing-lg);
@@ -76,16 +76,14 @@ footer a:hover {
     border-radius: var(--radius-lg);
     margin: var(--spacing-lg) 0;
     padding: var(--spacing-xl);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-soft-md);
     transition: all var(--transition-base);
     backdrop-filter: blur(10px);
 }
 
 .blog-card:hover, .photo-card:hover {
     border-color: var(--color-border-hover);
-    box-shadow: 
-        0 8px 24px rgba(0, 217, 255, 0.1),
-        inset 0 0 20px rgba(0, 217, 255, 0.05);
+    box-shadow: var(--shadow-soft-lg);
     transform: translateY(-4px);
 }
 
@@ -105,5 +103,9 @@ footer a:hover {
 @media (max-width: 768px) {
     .container {
         padding: var(--spacing-md);
+    }
+
+    footer {
+        padding: var(--spacing-2xl) var(--spacing-md);
     }
 }
