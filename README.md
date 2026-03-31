@@ -5,7 +5,7 @@
 ##  核心功能
 
 ###  GIS 可视化 (Maps)
-- **多底图切换**：支持天地图矢量底图（vec_w）与卫星底图（img_w）切换。
+- **多底图切换**：支持矢量底图（vec_w）与卫星底图（img_w）切换。
 - **空间数据加载**：前端解析 GeoJSON（省界）与 CSV（统计数据）并进行属性挂接。
 - **交互式地图**：支持鼠标悬停高亮、Popup 信息窗展示、点击飞入定位。
 - **代理服务**：后端实现了 Node.js 代理，自动处理 User-Agent 伪造与图片格式修正。
@@ -44,12 +44,6 @@ VITE_ADMIN_PASSWORD=your_password
 **后端配置** - 复制 `backend/.env.example` 为 `backend/.env`：
 ```bash
 cp backend/.env.example backend/.env
-```
-
-编辑 `backend/.env` 填入数据库和天地图密钥：
-```env
-DB_PASSWORD=your_db_password
-TDT_KEY=your_tianditu_key
 ```
 
 ### 3. 启动后端 (必须)
