@@ -289,7 +289,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 export default {
   name: 'Maps',
   setup() {
-    const MAPBOX_VECTOR_STYLE = 'mapbox://styles/xeroc/cmknj1u67000901ra8gc956tv';
+    const MAPBOX_VECTOR_STYLE = import.meta.env.VITE_MAPBOX_STYLE || 'mapbox://styles/mapbox/streets-v12';
     const MAPBOX_SATELLITE_STYLE = 'mapbox://styles/mapbox/satellite-streets-v12';
     const DEFAULT_MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -1210,7 +1210,7 @@ export default {
 .maps {
   padding: 0;
   margin: 0;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   position: relative;
   overflow: hidden;
