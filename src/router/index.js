@@ -7,6 +7,8 @@ import About from '../views/About.vue';
 import Login from '../views/Login.vue';
 import Admin from '../views/Admin.vue';
 import BlogEditor from '../views/BlogEditor.vue';
+import CesiumSandbox from '../views/CesiumSandbox.vue';
+import EngineSandbox from '../views/EngineSandbox.vue';
 import { isAuthenticated, logout } from '../utils/auth';
 
 const routes = [
@@ -63,6 +65,18 @@ const routes = [
     name: 'EditBlog',
     component: BlogEditor,
     meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: "/cesium",
+    name: "Cesium3D",
+    component: CesiumSandbox,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: "/sandbox",
+    name: "EngineSandbox",
+    component: EngineSandbox,
+    meta: { requiresAuth: false }
   }
 ];
 
