@@ -1,10 +1,5 @@
 <template>
   <div class="maps">
-    <div class="map-header">
-      <h1>我也不知道在做什么（（</h1>
-      <p>正在开发中……</p>
-    </div>
-    
     <div class="map-wrapper">
       <div v-if="loading" class="loading-message">
         <span class="loader">Loading</span>
@@ -289,7 +284,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 export default {
   name: 'Maps',
   setup() {
-    const MAPBOX_VECTOR_STYLE = import.meta.env.VITE_MAPBOX_STYLE || 'mapbox://styles/mapbox/streets-v12';
+    const MAPBOX_VECTOR_STYLE = 'mapbox://styles/xeroc/cmknj1u67000901ra8gc956tv';
     const MAPBOX_SATELLITE_STYLE = 'mapbox://styles/mapbox/satellite-streets-v12';
     const DEFAULT_MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
@@ -1210,47 +1205,13 @@ export default {
 .maps {
   padding: 0;
   margin: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   position: relative;
   overflow: hidden;
 }
 
-.map-header {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  background: transparent;
-  padding: 0;
-  pointer-events: none;
-}
 
-.map-header h1 {
-  margin: 0;
-  font-size: 50px;
-  font-weight: 700;
-  text-align: center;
-  color: #ecd01d;
-  text-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.3),
-    0 4px 8px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(0, 0, 0, 0.1);
-  letter-spacing: 1px;
-}
-
-.map-header p {
-  margin: 8px 0 0 0;
-  font-size: 30px;
-  text-align: center;
-  color: #f7eca7;
-  text-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    0 2px 6px rgba(0, 0, 0, 0.2);
-  font-weight: 300;
-  letter-spacing: 0.5px;
-}
 
 .map-wrapper {
   width: 100%;
@@ -1826,18 +1787,6 @@ export default {
 
   .toolbox.mobile .toolbox-content::-webkit-scrollbar-thumb:hover {
     background: #999;
-  }
-
-  .map-header {
-    top: 10px;
-  }
-
-  .map-header h1 {
-    font-size: 18px !important;
-  }
-
-  .map-header p {
-    font-size: 12px !important;
   }
 }
 </style>

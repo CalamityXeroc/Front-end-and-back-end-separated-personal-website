@@ -20,6 +20,7 @@
         <span>高 {{ altText }}m</span>
       </div>
       <div class="hud-line mono dim">
+        <button class="hud-play" @click="togglePlay" :title="playing ? '暂停时钟' : '播放时钟(昼夜联动)'">{{ playing ? '⏸' : '▶' }}</button>
         <span>☀️ {{ clockText }}</span>
       </div>
     </div>
@@ -176,15 +177,6 @@
         <footer class="console-foot">CesiumJS {{ cesiumVersion }} · Apache-2.0 · 本地演示</footer>
       </div>
     </aside>
-
-    <!-- 右下角:仿真时钟控制 -->
-    <div class="hud-bottom">
-      <button class="btn-ghost" @click="togglePlay" :title="playing ? '暂停时钟' : '播放时钟(昼夜联动)'">
-        {{ playing ? '⏸' : '▶' }}
-      </button>
-      <span class="mono hud-clock">{{ clockText }}</span>
-      <button class="btn-ghost" @click="resetClock" title="回到 00:00">⏮</button>
-    </div>
   </div>
 </template>
 
@@ -247,8 +239,6 @@ const terrainOn = ref(true);
 const googleImageryOn = ref(false);
 const photorealOn = ref(false);
 const photorealErr = ref(false);
-const cityOn = ref(false);
-const droneOn = ref(true);
 const geojsonOn = ref(false);
 
 const particleModes = [
@@ -272,10 +262,7 @@ const hourText = computed(() => {
 let viewer = null;
 let osmTiles = null;
 let photoRealTiles = null;
-let buildingEntities = [];
 let geoDs = null;
-let droneEntity = null;
-let droneFrame = 0;          // 无人机独立时钟(s)
 let rafId = 0;
 let lastFrame = 0;
 let fpsAcc = 0;
@@ -313,6 +300,12 @@ const TEX = {
 
 /* ===================== 初始化 ===================== */
 onMounted(async () => {
+// 防御:Cesium 预打包不一致时缺失 setDynamicLighting → 补齐
+const SA = Cesium.SkyAtmosphere
+if (SA && typeof SA.prototype.setDynamicLighting !== 'function') {
+  SA.prototype.setDynamicLighting = function (type) { this.dynamicLighting = type }
+}
+
   Cesium.Ion.defaultAccessToken = ION_TOKEN;
   if (!ION_TOKEN) console.warn('[sandbox] 未配置 VITE_CESIUM_ION_TOKEN,将使用免费数据源');
 
@@ -332,9 +325,23 @@ onMounted(async () => {
     contextOptions: {
       webgl: { alpha: true, antialias: true, preserveDrawingBuffer: true },
     },
-  });
+  })
+
 
   const scene = viewer.scene;
+
+  // 远距离自动扶正:高度 > 1500km 时强制俯视(-90°),
+  // 否则斜视轴在远距离会完全偏离地球,导致缩到太空尺度地球跑到屏幕外
+  viewer.scene.preRender.addEventListener(() => {
+    if (camFlying || !viewer.camera.positionCartographic) return;
+    const cam = viewer.camera;
+    if (cam.positionCartographic.height < 1.5e6) return;
+    cam.setView({
+      destination: cam.positionWC.clone(),
+      orientation: { heading: cam.heading, pitch: -Cesium.Math.PI_OVER_TWO, roll: 0 },
+    });
+  });
+
   scene.globe.showGroundAtmosphere = true;
   scene.globe.baseColor = Cesium.Color.fromCssColorString('#0b1526');
   scene.highDynamicRange = true;
@@ -365,12 +372,6 @@ onMounted(async () => {
   viewer.clock.currentTime = Cesium.JulianDate.addSeconds(start, hour.value * 3600, new Cesium.JulianDate());
   viewer.clock.multiplier = 180; // 播放时快速拉过一天
   viewer.clock.rangeType = Cesium.ClockRange.LOOP_STOP;
-
-  // 5) 无人机(独立虚拟时钟,与观众无关)
-  buildDrone();
-
-  // 6) 程序化城市
-  buildCity();
 
   // 7) 拾取粒子
   viewer.screenSpaceEventHandler.setInputAction(onSceneClick, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -452,112 +453,8 @@ async function loadPhotoreal(on) {
 }
 
 /* ===================== 场景对象 ===================== */
-function buildDrone() {
-  const center = { lon: 116.4074, lat: 39.9103 };
-  const RAD = 0.006;   // 经/纬度半径
-  const ALT = 1500;
-  const PERIOD = 30;   // 一圈 30s
 
-  // 轨迹(静态轨道线)
-  const pts = [];
-  for (let i = 0; i <= 128; i++) {
-    const a = (i / 128) * Math.PI * 2;
-    const lon = center.lon + Math.cos(a) * RAD * 1.25;
-    const lat = center.lat + Math.sin(a) * RAD;
-    pts.push(Cesium.Cartesian3.fromDegrees(lon, lat, ALT));
-  }
 
-  viewer.entities.add({
-    polyline: {
-      positions: pts,
-      width: 2,
-      material: new Cesium.PolylineDashMaterialProperty({
-        color: Cesium.Color.fromCssColorString('#59d3ff').withAlpha(0.55),
-      }),
-      arcType: Cesium.ArcType.RHUMB,
-    },
-  });
-
-  // 航点标记
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    viewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(
-        center.lon + Math.cos(a) * RAD * 1.25, center.lat + Math.sin(a) * RAD, ALT),
-      point: {
-        pixelSize: 8,
-        color: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.25),
-        outlineColor: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.9),
-        outlineWidth: 1,
-      },
-    });
-  }
-
-  // 无人机本体(独立时间)
-  droneEntity = viewer.entities.add({
-    position: new Cesium.CallbackProperty(() => {
-      const t = droneClock(); // 独立秒表
-      const a = (t / DRONE_PERIOD) * Math.PI * 2;
-      return Cesium.Cartesian3.fromDegrees(
-        center.lon + Math.cos(a) * RAD * 1.25,
-        center.lat + Math.sin(a) * RAD,
-        ALT + Math.sin(a * 3) * 160
-      );
-    }, false),
-    point: {
-      pixelSize: 7,
-      color: Cesium.Color.fromCssColorString('#ffe95c'),
-      outlineColor: Cesium.Color.BLACK,
-      outlineWidth: 1,
-      disableDepthTestDistance: 40000,
-    },
-    label: {
-      text: '巡检无人机 UAV-07',
-      font: '12px "PingFang SC", "Microsoft YaHei", sans-serif',
-      fillColor: Cesium.Color.WHITE,
-      pixelOffset: new Cesium.Cartesian2(0, -20),
-      disableDepthTestDistance: 40000,
-      distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 80000),
-    },
-  });
-}
-const DRONE_PERIOD = 60;
-
-function droneClock() {
-  return playing.value ? (droneFrame += 1 / 60) : droneFrame;
-}
-
-function buildCity() {
-  const C = { lon: 116.4405, lat: 39.930, };
-  const cols = 22, rows = 22, spacing = 0.00085;
-  let seed = 20260621;
-  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < cols; j++) {
-      const h = 16 + rnd() * 130;
-      const w = 14 + rnd() * 16;
-      const d = 14 + rnd() * 16;
-      const lon = C.lon + (j - cols / 2) * spacing * 1.25;
-      const lat = C.lat + (i - rows / 2) * spacing;
-      const isWarm = rnd() > 0.72;
-      const color = new Cesium.Color(
-        isWarm ? 1.0 : 0.14,
-        isWarm ? 0.55 : 0.75,
-        1.0,
-        1.0
-      );
-      const e = viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(lon, lat, h / 2),
-        box: {
-          dimensions: new Cesium.Cartesian3(w, h, d),
-          material: color,
-        },
-        show: false,
-      });
-      buildingEntities.push(e);
-    }
-  }
-}
 
 /* ===================== 控制处理 ===================== */
 function setLighting(v) { lighting.value = !!v; if (viewer) viewer.scene.globe.enableLighting = !!v; }
@@ -629,18 +526,15 @@ async function setGeoJson(v) {
         fill: Cesium.Color.fromCssColorString('#1e6fbe').withAlpha(0.22),
         clampToGround: false,
       });
-      geoDs = viewer.dataSources.add(ds);
+      viewer.dataSources.add(ds);
+      geoDs = ds; // add() 返回的是 Promise,必须用 load() 解析出的 ds 本体
+      geoDs.show = geojsonOn.value; // 同步当前开关(防加载期间切换)
     } catch (e) {
       console.warn('[sandbox] GeoJSON 加载失败', e);
     }
   }
   if (geoDs) geoDs.show = v;
 }
-function setCity(v) {
-  cityOn.value = v;
-  for (const e of buildingEntities) e.show = v;
-}
-function setDrone(v) { droneOn.value = v; if (droneEntity) droneEntity.show = v; }
 
 /* 图层开关映射列表(template 复用) */
 const layerRows = [
@@ -648,8 +542,6 @@ const layerRows = [
   { key: 'terrain', label: 'Cesium 世界地形(高程)', get: () => terrainOn.value, set: setTerrainOnHandler },
   { key: 'google', label: 'Google 卫星影像(2D)', get: () => googleImageryOn.value, set: setGoogleImagery },
   { key: 'photoreal', label: 'Google 写实 3D 场景', get: () => photorealOn.value, set: setPhotoreal },
-  { key: 'city', label: '程序生成:京城夜景城市', get: () => cityOn.value, set: setCity },
-  { key: 'drone', label: '无人机轨迹仿真', get: () => droneOn.value, set: setDrone },
   { key: 'geojson', label: '中国省界 GeoJSON', get: () => geojsonOn.value, set: setGeoJson },
 ];
 
@@ -818,21 +710,21 @@ function togglePlay() {
   playing.value = !playing.value;
   if (viewer) viewer.clock.shouldAnimate = playing.value;
 }
-function resetClock() {
-  if (viewer) viewer.clock.currentTime = viewer.clock.startTime.clone();
-}
 function flyTo(p) {
   if (!viewer) return;
-  viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, p.h),
-    orientation: {
-      heading: 0,
-      pitch: -Cesium.Math.PI_OVER_TWO * 0.82,
-      roll: 0,
-    },
+  // 用 BoundingSphere + HeadingPitchRange:目标点数学上锁定屏幕正中心,
+  // 任意俯角/任意距离都不会偏移(旧写法相机在目标正上方斜看,目标永远偏下)
+  const center = Cesium.Cartesian3.fromDegrees(p.lon, p.lat, 0);
+  camFlying = true;
+  viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(center, 1), {
+    offset: new Cesium.HeadingPitchRange(0, -Cesium.Math.PI_OVER_TWO * 0.82, Math.max(p.h * 1.05, 800)),
     duration: 2.4,
+    complete: () => { camFlying = false; },
+    cancel: () => { camFlying = false; },
   });
 }
+let camFlying = false; // 相机飞行中(避免自动扶正与预设飞行打架)
+
 function flyHome() { flyTo(presets[0]); }
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
@@ -884,9 +776,10 @@ function snapshot() {
 /* ============ HUD ============ */
 .hud { position: absolute; pointer-events: none; user-select: none; z-index: 10; }
 .hud-top {
-  top: 14px;
-  left: 12px;
-  margin-left: 96px;
+  top: auto;
+  left: auto;
+  bottom: 14px;
+  right: 14px;
   padding: 10px 14px;
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(8, 20, 40, 0.72), rgba(10, 12, 30, 0.5));
@@ -963,7 +856,17 @@ function snapshot() {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   transition: width 0.2s;
 }
-.console.collapse { width: 46px; }
+.console.collapsed {
+  width: 46px;
+  bottom: auto;             /* 高度收缩到只剩头部,真最小化 */
+}
+.console.collapsed .console-icon,
+.console.collapsed .console-title { display: none; }
+.console.collapsed .console-header {
+  justify-content: center;
+  padding: 10px 0;
+  border-bottom: none;
+}
 .console-header {
   display: flex;
   align-items: center;
@@ -1099,37 +1002,24 @@ input[type='range']:disabled { opacity: 0.4; }
   margin-top: 6px;
 }
 
-/* ============ 底部 ============ */
-.hud-bottom {
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(8, 18, 38, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(90, 150, 255, 0.22);
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-}
-.btn-ghost {
+/* ============ 时钟播放按钮(HUD 内) ============ */
+.hud-play {
+  pointer-events: auto;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #cfe4ff;
-  border-radius: 8px;
+  color: #7fd4ff;
+  border-radius: 6px;
   cursor: pointer;
-  padding: 3px 10px;
-  font-size: 12px;
+  padding: 1px 7px;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-right: 6px;
 }
-.btn-ghost:hover { background: rgba(255, 255, 255, 0.08); }
-.hud-clock { color: #7fd4ff; min-width: 84px; text-align: center; }
+.hud-play:hover { background: rgba(255, 255, 255, 0.1); }
 
 @media (max-width: 900px) {
   .console { width: 300px; }
-  .hud-top { margin-left: 48px; max-width: calc(100vw - 260px); }
+  .hud-top { max-width: calc(100vw - 24px); }
 }
 @media (max-width: 620px) {
   .console { left: 8px; right: 8px; width: auto; bottom: auto; max-height: 46vh; }

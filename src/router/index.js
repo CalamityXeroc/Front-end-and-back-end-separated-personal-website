@@ -67,14 +67,14 @@ const routes = [
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
-    path: "/cesium",
-    name: "Cesium3D",
+    path: '/cesium',
+    name: 'Cesium3D',
     component: CesiumSandbox,
     meta: { requiresAuth: false }
   },
   {
-    path: "/sandbox",
-    name: "EngineSandbox",
+    path: '/sandbox',
+    name: 'EngineSandbox',
     component: EngineSandbox,
     meta: { requiresAuth: false }
   }
