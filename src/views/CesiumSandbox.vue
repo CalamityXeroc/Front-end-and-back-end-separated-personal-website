@@ -155,6 +155,24 @@
           <div class="hint-warn" v-if="photorealErr">⚠ Google 写实场景加载失败,稍后重试</div>
         </section>
 
+        <!-- 图层校准 -->
+        <section class="panel">
+          <h4 class="panel-title">🎯 图层校准 <span class="hint">矢量层对齐底图</span></h4>
+          <div class="ctrl">
+            <span class="label">东西偏移 <em class="mono">{{ calibE }}m</em></span>
+            <input type="range" min="-2000" max="2000" step="5" v-model.number="calibE" @input="applyCalib" @change="saveCalib" />
+          </div>
+          <div class="ctrl">
+            <span class="label">南北偏移 <em class="mono">{{ calibN }}m</em></span>
+            <input type="range" min="-2000" max="2000" step="5" v-model.number="calibN" @input="applyCalib" @change="saveCalib" />
+          </div>
+          <div class="btn-grid calib-grid">
+            <button class="btn-chip" @click="autoAlignGcj">📍 GCJ-02 自动对齐</button>
+            <button class="btn-chip" @click="resetCalib">↺ 重置校准</button>
+          </div>
+          <div class="hint-warn">按底图独立记忆;若底图为中国大陆偏移影像(约偏东500m),点自动对齐</div>
+        </section>
+
         <!-- 粒子沙盒 -->
         <section class="panel">
           <h4 class="panel-title">🧨 粒子沙盒 <span class="hint">点击 3D 场景引爆</span></h4>
@@ -185,6 +203,8 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 // 预打包 ESM 入口:引入官方已捆绑单文件,避免 CJS 依赖(urijs/mersenne-twister)的 default 导出互指问题
 import * as Cesium from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
+// 国测局 GCJ-02 → WGS-84 坐标转换(现成库,零依赖)
+import gcoord from 'gcoord'; // 默认导入, ESM 预打包下 named export 不可靠
 
 /* ===================== 常量 ===================== */
 const ION_TOKEN = import.meta.env.VITE_CESIUM_ION_TOKEN || '';
@@ -236,8 +256,7 @@ const fogDensity = ref(0);
 const exaggeration = ref(1);
 const osmOn = ref(true);
 const terrainOn = ref(true);
-const googleImageryOn = ref(false);
-const photorealOn = ref(false);
+const googleImageryOn = ref(false);const photorealOn = ref(false);
 const photorealErr = ref(false);
 const geojsonOn = ref(false);
 
@@ -360,6 +379,7 @@ if (SA && typeof SA.prototype.setDynamicLighting !== 'function') {
   try {
     osmTiles = await Cesium.createOsmBuildingsAsync();
     scene.primitives.add(osmTiles);
+    loadCalib(); // 应用持久化的图层校准偏移
   } catch (e) {
     console.warn('[sandbox] OSM 建筑加载失败', e);
   }
@@ -399,10 +419,18 @@ onBeforeUnmount(() => {
 /* ===================== 数据源 ===================== */
 async function setBaseImagery(kind) {
   if (!viewer) return;
+  baseKind.value = kind;
   try {
     let provider;
     if (kind === 'google') {
-      provider = await Cesium.IonImageryProvider.fromAssetId(ION.GOOGLE_SAT);
+      // ion asset 3830186 的 Google 2D 瓦片对中国区域返回空白;
+      // ArcGIS 元数据服务(services.arcgisonline.com)在国内网络被拦截,
+      // 但瓦片服务(server.arcgisonline.com)可用 → 直接用 UrlTemplate 拼瓦片
+      provider = new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 19,
+        credit: new Cesium.Credit('Esri, Maxar, Earthstar Geographics'),
+      });
     } else if (kind === 'bing-plain') {
       provider = await Cesium.IonImageryProvider.fromAssetId(ION.IMAGERY_BING_PLAIN);
     } else {
@@ -410,12 +438,14 @@ async function setBaseImagery(kind) {
     }
     viewer.imageryLayers.removeAll();
     viewer.imageryLayers.addImageryProvider(provider);
+    loadCalib(); // 每个底图独立记忆校准偏移
   } catch (e) {
-    console.warn('[sandbox] 影像加载失败,回退 ArcGIS', e);
+    console.warn('[sandbox] 影像加载失败,回退 ArcGIS 直连瓦片', e);
     try {
-      const fb = await Cesium.ArcGisMapServerImageryProvider.fromUrl(
-        'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-      );
+      const fb = new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 19,
+      });
       viewer.imageryLayers.removeAll();
       viewer.imageryLayers.addImageryProvider(fb);
     } catch (e2) {
@@ -520,7 +550,11 @@ async function setGeoJson(v) {
   if (!viewer) return;
   if (!geoDs && v) {
     try {
-      const ds = await Cesium.GeoJsonDataSource.load('/geoData/中国_省.geojson', {
+      // DataV 省界为 GCJ-02 坐标系,先用 gcoord 整体转成 WGS84(与 OSM 建筑同系)
+      const res = await fetch('/geoData/中国_省.geojson');
+      const raw = await res.json();
+      const wgs = gcoord.transform(raw, gcoord.GCJ02, gcoord.WGS84);
+      const ds = await Cesium.GeoJsonDataSource.load(wgs, {
         stroke: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.85),
         strokeWidth: 1.2,
         fill: Cesium.Color.fromCssColorString('#1e6fbe').withAlpha(0.22),
@@ -528,6 +562,7 @@ async function setGeoJson(v) {
       });
       viewer.dataSources.add(ds);
       geoDs = ds; // add() 返回的是 Promise,必须用 load() 解析出的 ds 本体
+      stashGeoOriginals(ds); // 缓存原始坐标供校准平移
       geoDs.show = geojsonOn.value; // 同步当前开关(防加载期间切换)
     } catch (e) {
       console.warn('[sandbox] GeoJSON 加载失败', e);
@@ -536,11 +571,96 @@ async function setGeoJson(v) {
   if (geoDs) geoDs.show = v;
 }
 
+/* ===================== 图层校准(矢量层对齐底图) ===================== */
+/*影像是栅格,无法逐瓦片转坐标系;业界通用做法是把矢量层(OSM 建筑/省界)整体平移去对齐底图。
+  坐标系转换本身用现成库 gcoord 完成,这里只做几何平移。*/
+const calibE = ref(0); // 东偏移(米)
+const calibN = ref(0); // 北偏移(米)
+const baseKind = ref('bing');
+let geoOriginals = null; // Map(entityId -> 原始 position 数据),保证滑块绝对平移不累加
+
+function shiftCarto(carto, dE, dN) {
+  const lon = Cesium.Math.toDegrees(carto.longitude) + dE / (111320 * Math.cos(carto.latitude));
+  const lat = Cesium.Math.toDegrees(carto.latitude) + dN / 110540;
+  return Cesium.Cartesian3.fromDegrees(lon, lat, carto.height);
+}
+
+function applyCalib() {
+  const dE = calibE.value, dN = calibN.value;
+  // 1) OSM 建筑:tileset modelMatrix(ECEF 平移,由 ENU 分量合成)
+  if (osmTiles) {
+    // 用视中心的 ENU 基准(OSM 是全球 tileset,boundingSphere 中心无地理意义;
+    // 校准本来就是针对当前视野区域的局部平移)
+    const carto = viewer.camera.positionCartographic;
+    const origin = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, 0);
+    const enu = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+    // 只取 ENU 旋转矩阵,把局部(东,北)平移到 ECEF 世界方向
+    const rot = Cesium.Matrix4.getRotation(enu, new Cesium.Matrix3());
+    const t = Cesium.Matrix3.multiplyByVector(rot, new Cesium.Cartesian3(dE, dN, 0), new Cesium.Cartesian3());
+    osmTiles.modelMatrix = Cesium.Matrix4.fromTranslation(t);
+  }
+  // 2) 省界 GeoJSON:基于原始坐标 + 绝对偏移重写位置
+  if (geoDs && geoOriginals) {
+    for (const e of geoDs.entities.values) {
+      const orig = geoOriginals.get(e.id);
+      if (!orig) continue;
+      if (orig.hier && e.polygon) {
+        const mk = (h) => new Cesium.PolygonHierarchy(h.positions.map((p) => shiftCarto(Cesium.Cartographic.fromCartesian(p), dE, dN)), h.holes.map((hh) => new Cesium.PolygonHierarchy(hh.positions.map((p) => shiftCarto(Cesium.Cartographic.fromCartesian(p), dE, dN)))));
+        e.polygon.hierarchy = new Cesium.ConstantProperty(mk(orig.hier));
+      }
+      if (orig.pos && e.position) {
+        e.position = new Cesium.ConstantProperty(shiftCarto(Cesium.Cartographic.fromCartesian(orig.pos), dE, dN));
+      }
+    }
+  }
+}
+
+function stashGeoOriginals(ds) {
+  geoOriginals = new Map();
+  for (const e of ds.entities.values) {
+    const rec = {};
+    if (e.polygon && e.polygon.hierarchy) rec.hier = e.polygon.hierarchy.getValue(Cesium.JulianDate.now());
+    if (e.position) rec.pos = e.position.getValue(Cesium.JulianDate.now());
+    geoOriginals.set(e.id, rec);
+  }
+}
+
+function autoAlignGcj() {
+  // 当前视中心 WGS84 → GCJ-02,差值(米)即矢量层需平移的量(gcoord 负责坐标系转换)
+  const carto = viewer.camera.positionCartographic;
+  const lon = Cesium.Math.toDegrees(carto.longitude), lat = Cesium.Math.toDegrees(carto.latitude);
+  const [glon, glat] = gcoord.transform([lon, lat], gcoord.WGS84, gcoord.GCJ02);
+  calibE.value = Math.round((glon - lon) * 111320 * Math.cos(carto.latitude));
+  calibN.value = Math.round((glat - lat) * 110540);
+  applyCalib();
+  saveCalib();
+}
+
+function resetCalib() {
+  calibE.value = 0;
+  calibN.value = 0;
+  applyCalib();
+  saveCalib();
+}
+
+function saveCalib() {
+  try { localStorage.setItem('cesium-calib-' + baseKind.value, JSON.stringify([calibE.value, calibN.value])); } catch (e) { /* ignore */ }
+}
+
+function loadCalib() {
+  try {
+    const s = localStorage.getItem('cesium-calib-' + baseKind.value);
+    if (s) { const [e, n] = JSON.parse(s); calibE.value = e; calibN.value = n; }
+    else { calibE.value = 0; calibN.value = 0; }
+  } catch (e) { calibE.value = 0; calibN.value = 0; }
+  applyCalib();
+}
+
 /* 图层开关映射列表(template 复用) */
 const layerRows = [
   { key: 'osm', label: 'OSM 全球三维建筑', get: () => osmOn.value, set: setOsm },
   { key: 'terrain', label: 'Cesium 世界地形(高程)', get: () => terrainOn.value, set: setTerrainOnHandler },
-  { key: 'google', label: 'Google 卫星影像(2D)', get: () => googleImageryOn.value, set: setGoogleImagery },
+  { key: 'google', label: 'ArcGIS 卫星影像(2D)', get: () => googleImageryOn.value, set: setGoogleImagery },
   { key: 'photoreal', label: 'Google 写实 3D 场景', get: () => photorealOn.value, set: setPhotoreal },
   { key: 'geojson', label: '中国省界 GeoJSON', get: () => geojsonOn.value, set: setGeoJson },
 ];
@@ -968,6 +1088,8 @@ input[type='range']:disabled { opacity: 0.4; }
 }
 
 .btn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+/* 图层校准面板:两个按钮固定分两列,避免长文案被 auto-fill 挤成 3 列溢出 */
+.calib-grid { grid-template-columns: repeat(2, 1fr); }
 .btn-chip {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.14);

@@ -38,19 +38,53 @@
         <div class="project-content">
           <div class="project-item">
             <h3>北京绿道系统可视化开放平台</h3>
-            <p class="project-desc">初入茅庐GIS开发的第一个作品，欢迎大家来提出宝贵建议！</p>
+            <p class="project-desc">
+              我的第一个完整上线的 WebGIS 作品——覆盖北京 17 条主要绿道，支持交互地图浏览、步行/骑行路径规划导航、3D 漫游、周边设施查询、空间分析与绿道智能推荐，还有 AI 助手「绿道小助手」，桌面端与移动端 App 双端可用。欢迎大家来提出宝贵建议！
+            </p>
             <div class="tech-stack">
               <span>Vue3</span>
-              <span>Openlayers</span>
-              <span>空间数据分析</span>
-              <span>响应式设计</span>
+              <span>GeoScene JS SDK</span>
+              <span>PostgreSQL/PostGIS</span>
+              <span>AI 智能助手</span>
+              <span>移动端 App</span>
             </div>
-            <a href="https://github.com/CalamityXeroc/Beijing-Greenway-System-Visualizer-A-openlayer-JS-Implementation.git" target="_blank" class="btn-link">
+            <div class="project-actions">
+              <a href="https://wandergreen.cn/" target="_blank" class="btn-link">
+                在线访问平台
+              </a>
+              <a href="https://github.com/CalamityXeroc/Beijing-Greenway-System-Visualizer-A-openlayer-JS-Implementation.git" target="_blank" class="btn-link">
+                查看 GitHub 仓库
+              </a>
+            </div>
+          </div>
+          <div class="project-image">
+            <img src="/picture/about-1.png" alt="北京绿道系统截图">
+          </div>
+        </div>
+      </section>
+
+      <!-- GIS 智能体项目 -->
+      <section class="card project-card">
+        <h2>🤖 智能体实践：GIS Task CLI</h2>
+        <div class="project-content">
+          <div class="project-item">
+            <h3>GIS 智能体命令行工具（GIS Task CLI）</h3>
+            <p class="project-desc">
+              参考 Claude Code 架构设计的 GIS AI Agent：用自然语言下达任务，由规划器自动拆解步骤并调度 ArcPy 工具链执行，支持图层整合、投影变换、数据质量检查与专题图自动制图，内置会话记忆、风险评估与执行护栏。图中专题图即由 Agent 自动规划制作。
+            </p>
+            <div class="tech-stack">
+              <span>Python</span>
+              <span>AI Agent</span>
+              <span>ArcPy</span>
+              <span>FastAPI</span>
+              <span>LLM 编排</span>
+            </div>
+            <a href="https://github.com/CalamityXeroc/GIS-agent.git" target="_blank" class="btn-link">
               查看 GitHub 仓库
             </a>
           </div>
           <div class="project-image">
-            <img src="/picture/about-1.png" alt="北京绿道系统截图">
+            <img src="/picture/about-3.png" alt="GIS CLI 自动制作的专题图">
           </div>
         </div>
       </section>
@@ -156,9 +190,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -1;
-  opacity: 0.22;
-  filter: saturate(0.85) contrast(0.9);
+  z-index: 0;
 }
 
 .about-container {
@@ -302,6 +334,12 @@ h2 {
   color: #1976d2;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .project-image {
