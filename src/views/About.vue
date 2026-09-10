@@ -28,7 +28,7 @@
         </div>
         <div class="learning-status">
           <strong>🚀 正在攻克：</strong>
-          <span>前端开发 & 精进制图能力</span>
+          <span>WebGIS开发, agent开发</span>
         </div>
       </section>
 
