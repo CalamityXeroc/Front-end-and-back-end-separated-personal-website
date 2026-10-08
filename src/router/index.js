@@ -4,6 +4,7 @@ import Blog from '../views/Blog.vue';
 import BlogPost from '../views/BlogPost.vue';
 import Maps from '../views/Maps.vue';
 import About from '../views/About.vue';
+import GisAgent from '../views/GisAgent.vue';
 import Login from '../views/Login.vue';
 import Admin from '../views/Admin.vue';
 import BlogEditor from '../views/BlogEditor.vue';
@@ -40,6 +41,12 @@ const routes = [
     path: '/about',
     name: 'About',
     component: About,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/gis-agent',
+    name: 'GisAgent',
+    component: GisAgent,
     meta: { requiresAuth: false }
   },
   {

@@ -98,12 +98,13 @@ export default {
   display: flex;
   gap: 6px;
   padding: 5px;
-  background: rgba(10, 16, 28, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(10, 16, 28, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  transform: translateZ(0);
 }
 .fmn-item {
   display: flex;

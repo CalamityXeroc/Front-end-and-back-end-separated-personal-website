@@ -61,6 +61,7 @@ export default {
     const navItems = [
       { path: '/blog', label: '博客', icon: '📝' },
       { path: '/maps', label: '地图', icon: '🗺️' },
+      { path: '/gis-agent', label: '智能体', icon: '🤖' },
       { path: '/about', label: '关于', icon: '👨‍💻' }
     ];
 
@@ -110,10 +111,10 @@ export default {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: rgba(248, 254, 251, 0.9);
-  backdrop-filter: blur(12px);
+  background: rgba(248, 254, 251, 0.96);
   border-bottom: 1px solid var(--color-border);
   box-shadow: 0 2px 8px rgba(45, 62, 45, 0.08);
+  transform: translateZ(0);
 }
 
 .header-container {
@@ -140,6 +141,7 @@ export default {
 .logo-icon {
   font-size: 1.5em;
   animation: pulse-glow 2s ease-in-out infinite;
+  will-change: filter;
 }
 
 .header-logo:hover {
@@ -310,10 +312,10 @@ export default {
 /* ========== 动画 ========== */
 @keyframes pulse-glow {
   0%, 100% {
-    text-shadow: 0 0 8px rgba(107, 156, 47, 0.3);
+    filter: drop-shadow(0 0 8px rgba(107, 156, 47, 0.3));
   }
   50% {
-    text-shadow: 0 0 16px rgba(107, 156, 47, 0.6);
+    filter: drop-shadow(0 0 16px rgba(107, 156, 47, 0.6));
   }
 }
 

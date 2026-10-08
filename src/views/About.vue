@@ -79,9 +79,12 @@
               <span>FastAPI</span>
               <span>LLM 编排</span>
             </div>
-            <a href="https://github.com/CalamityXeroc/GIS-agent.git" target="_blank" class="btn-link">
-              查看 GitHub 仓库
-            </a>
+            <div class="project-actions">
+              <router-link to="/gis-agent" class="btn-link">查看项目详情</router-link>
+              <a href="https://github.com/CalamityXeroc/GIS-agent.git" target="_blank" class="btn-link">
+                查看 GitHub 仓库
+              </a>
+            </div>
           </div>
           <div class="project-image">
             <img src="/picture/about-3.png" alt="GIS CLI 自动制作的专题图">
@@ -191,6 +194,7 @@ export default {
   height: 100%;
   object-fit: cover;
   z-index: 0;
+  will-change: transform;
 }
 
 .about-container {
@@ -206,12 +210,12 @@ export default {
 .profile-header {
   text-align: center;
   margin-bottom: 56px;
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.93);
   padding: 36px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft-md);
-  backdrop-filter: blur(12px);
+  transform: translateZ(0);
 }
 
 h1 {
@@ -254,13 +258,13 @@ h1 {
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   padding: var(--spacing-3xl);
   box-shadow: var(--shadow-soft-md);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-  backdrop-filter: blur(10px);
+  transform: translateZ(0);
 }
 
 .card:hover {
